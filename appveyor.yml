@@ -1,0 +1,51 @@
+version: xray_mlr_{build}
+image: Visual Studio 2019
+configuration: Release
+platform: Win32
+shallow_clone: true
+environment:
+  DXSDK: '%DXSDK_DIR%'
+before_build:
+- cmd: >-
+    echo %PLATFORM%
+
+    echo %CONFIGURATION%
+
+    echo %APPVEYOR_REPO_TAG_NAME%.7z
+build:
+  project: ./src/engine.sln
+  verbosity: minimal
+after_build:
+- cmd: >-
+    set APPVEYOR_VERSION=%APPVEYOR_BUILD_VERSION%
+
+    echo %APPVEYOR_VERSION%
+    
+    md dist
+
+    echo ===================== engine files =====================
+
+    md dist\engine\bin
+
+    copy src\intermediate\%PLATFORM%-%CONFIGURATION%\*.exe dist\engine\bin\
+
+    copy src\intermediate\%PLATFORM%-%CONFIGURATION%\*.dll dist\engine\bin\
+    
+    copy sdk\binaries\lua51.dll dist\engine\bin\
+
+    echo appveyor PushArtifact %APPVEYOR_REPO_TAG_NAME%.7z release
+
+    cd dist\engine
+
+    7z a ..\..\%APPVEYOR_REPO_TAG_NAME%.7z
+
+    cd ..\..
+
+    echo appveyor PushArtifact %APPVEYOR_REPO_TAG_NAME%.7z release
+
+    copy %APPVEYOR_REPO_TAG_NAME%.7z %APPVEYOR_VERSION%.7z
+
+    appveyor PushArtifact %APPVEYOR_VERSION%.7z
+artifacts:
+- path: .\$(appveyor_repo_tag_name).7z
+  name: release
