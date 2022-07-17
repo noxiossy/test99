@@ -47,14 +47,15 @@ BOOL CBulletManager::test_callback(const collide::ray_defs& rd, CObject* object,
 		(!bullet->flags.ricochet_was))			return FALSE;
 
 	BOOL bRes						= TRUE;
+	if (object){
 	CEntity*	entity			= smart_cast<CEntity*>(object);
 	if (entity&&entity->g_Alive()&&(entity->ID()!=bullet->parent_id)){
 		ICollisionForm*	cform	= entity->collidable.model;
 		if ((NULL!=cform) && (cftObject==cform->Type())){
 			CActor* actor		= smart_cast<CActor*>(entity);
-			CAI_Stalker* stalker= smart_cast<CAI_Stalker*>(entity);
-			// в кого попали?
-			if (actor && IsGameTypeSingle()/**/||stalker/**/){
+				//CAI_Stalker* stalker= smart_cast<CAI_Stalker*>(entity);
+			// â êîãî ïîïàëè?
+				if (actor/* || stalker*/) {
 				// попали в актера или сталкера
 				Fsphere S		= cform->getSphere();
 				entity->XFORM().transform_tiny	(S.P)	;
@@ -139,7 +140,7 @@ BOOL CBulletManager::test_callback(const collide::ray_defs& rd, CObject* object,
 			}
 		}
 	}
-
+	}
 	
 	return bRes;
 }

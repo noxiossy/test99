@@ -24,13 +24,13 @@
 	#define NO_BUG_TRAP										// dont use bug trap
 	//#define SPAWN_ANTIFREEZE								// spread spawn of game objects thoughout multiple frames to prevent lags (by alpet)
 	#define NON_FATAL_VERIFY								// don't crash game when VERIFY fails
-	#define USE_GSC_MEM_ALLOC								// when this is undefined memory allocation for luajit is handled by luajit allocator
+	//#define USE_GSC_MEM_ALLOC								// when this is undefined memory allocation for luajit is handled by luajit allocator
 //-CORE
 
 // VISUAL:
 	#define DETAIL_RADIUS									// detail draw radius (by KD)
-	#define VSYNC_FIX										// functional VSync by avbaula
-	#define ECO_RENDER										// limit FPS in menu to prevent video card overheat (by alpet)
+//	#define VSYNC_FIX										// functional VSync by avbaula
+//	#define ECO_RENDER										// limit FPS in menu to prevent video card overheat (by alpet)
 	#define TREE_WIND_EFFECT								// configurable tree sway, can be used to have trees sway more during storms or lightly on clear days.
 //-VISUAL
 
@@ -47,8 +47,9 @@
 	#define LAYERED_SND_SHOOT								// see comment down below 
 //-SOUND
 
-
-
+// ADDITIONAL:
+	//#define EQUAL_WEAPONS_SLOTS
+//-ADDITIONAL
 
 /*LAYERED_SND_SHOOT by Alundaio
 When defined, it will allow you to play a group of sounds from a specified section for snd_shoot.

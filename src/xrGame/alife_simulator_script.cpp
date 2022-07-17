@@ -284,12 +284,22 @@ void CALifeSimulator__release					(CALifeSimulator *self, CSE_Abstract *object, 
 //	self->release						(object,true);
 
 	THROW								(object);
+    if (!object) return;
 	CSE_ALifeObject						*alife_object = smart_cast<CSE_ALifeObject*>(object);
 	THROW								(alife_object);
+    if (!alife_object) return;
 	if (!alife_object->m_bOnline) {
 		self->release					(object,true);
 		return;
 	}
+
+	// awesome hack, for everyone only
+	CObject* obj = Level().Objects.net_Find(object->ID);
+	if (!obj)
+		return;
+
+	if (obj->getDestroy())
+		return;
 
 	// awful hack, for stohe only
 	NET_Packet							packet;
@@ -302,6 +312,12 @@ void CALifeSimulator__release					(CALifeSimulator *self, CSE_Abstract *object, 
 
 LPCSTR get_level_name							(const CALifeSimulator *self, int level_id)
 {
+	const GameGraph::LEVEL_MAP& levels = ai().game_graph().header().levels();
+	GameGraph::LEVEL_MAP::const_iterator I = levels.find((GameGraph::_LEVEL_ID)level_id);
+	if (I == levels.end())
+	{
+		return NULL;
+	}
 	LPCSTR								result = *ai().game_graph().header().level((GameGraph::_LEVEL_ID)level_id).name();
 	return								(result);
 }

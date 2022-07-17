@@ -38,8 +38,21 @@ IC static void generate_orthonormal_basis1(const Fvector& dir,Fvector& updir, Fv
 void CActor::g_cl_ValidateMState(float dt, u32 mstate_wf)
 {
 	// Lookout
-	if (mstate_wf&mcLookout)	mstate_real		|= mstate_wf&mcLookout;
-	else						mstate_real		&= ~mcLookout;
+	if ((mstate_wf & mcLLookout) && (mstate_wf & mcRLookout))
+	{
+		// It's impossible to perform right and left lookouts in the same time
+		mstate_real &= ~mcLookout;
+	}
+	else if (mstate_wf & mcLookout)
+	{		
+		// Activate one of lookouts
+		mstate_real |= mstate_wf & mcLookout;
+	}
+	else
+	{
+		// No lookouts needed
+		mstate_real &= ~mcLookout;
+	}
 	
 	if (mstate_real&(mcJump|mcFall|mcLanding|mcLanding2))
 		mstate_real		&= ~mcLookout;
@@ -284,12 +297,12 @@ void CActor::g_cl_CheckControls(u32 mstate_wf, Fvector &vControlAccel, float &Ju
 	if(mstate_real&mcSprint && !(mstate_old&mcSprint) )
 		state_anm					= "sprint";
 	else
-	if(mstate_real&mcLStrafe && !(mstate_old&mcLStrafe) )
+	/*if(mstate_real&mcLStrafe && !(mstate_old&mcLStrafe) )
 		state_anm					= "strafe_left";
 	else
 	if(mstate_real&mcRStrafe && !(mstate_old&mcRStrafe) )
 		state_anm					= "strafe_right";
-	else
+	else*/
 	if(mstate_real&mcFwd && !(mstate_old&mcFwd) )
 		state_anm					= "move_fwd";
 	else
@@ -476,7 +489,7 @@ void CActor::g_cl_Orientate	(u32 mstate_rl, float dt)
 	} else {
 		// if camera rotated more than 45 degrees - align model with it
 		float ty = angle_normalize(r_torso.yaw);
-		if (_abs(r_model_yaw-ty)>PI_DIV_4)	{
+		if (_abs(r_model_yaw-ty)>PI_DIV_4-30)	{
 			r_model_yaw_dest = ty;
 			// 
 			mstate_real	|= mcTurn;
@@ -555,7 +568,7 @@ bool CActor::CanSprint()
 bool CActor::CanJump()
 {
 	bool can_Jump = 
-		!character_physics_support()->movement()->PHCapture() &&((mstate_real&mcJump)==0) && (m_fJumpTime<=0.f) 
+        !conditions().IsCantSprint() && !character_physics_support()->movement()->PHCapture() &&((mstate_real&mcJump)==0) && (m_fJumpTime<=0.f)
 		&& !m_bJumpKeyPressed &&!IsZoomAimingMode();
 
 	return can_Jump;

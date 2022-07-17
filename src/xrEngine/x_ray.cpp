@@ -412,7 +412,7 @@ void Startup()
     destroyEngine();
 }
 
-static BOOL CALLBACK logDlgProc(HWND hw, UINT msg, WPARAM wp, LPARAM lp)
+static INT_PTR CALLBACK logDlgProc(HWND hw, UINT msg, WPARAM wp, LPARAM lp)
 {
     switch (msg)
     {

@@ -81,6 +81,7 @@
 #include <stdarg.h>
 #include <math.h>
 #include <string.h>
+#include <thread>
 //#include <process.h>
 
 #ifndef DEBUG

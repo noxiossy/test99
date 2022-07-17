@@ -1,4 +1,5 @@
 ﻿#include "stdafx_.h"
+#if 0
 #include "BugSlayerUtil.h"
 #include <stdio.h>
 
@@ -9,8 +10,7 @@ int g_stackTraceCount = 0;
 
 void BuildStackTrace	(struct _EXCEPTION_POINTERS *g_BlackBoxUIExPtrs)
 {
-	for (int i = 0; i != MAX_STACK_TRACE; ++i)
-	FillMemory(g_stackTrace[i], 4096, 0);
+	FillMemory			(g_stackTrace[0],MAX_STACK_TRACE*256, 0 );
 
 	const TCHAR* traceDump = 
 		GetFirstStackTraceString( GSTSO_MODULE | GSTSO_SYMBOL | GSTSO_SRCLINE,
@@ -115,3 +115,5 @@ void OutputDebugStackTrace	(const char *header)
 		OutputDebugString	("\r\n");
 	}
 }
+
+#endif
