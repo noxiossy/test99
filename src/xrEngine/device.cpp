@@ -77,7 +77,6 @@ void CRenderDevice::Clear()
     m_pRender->Clear();
 }
 
-extern void CheckPrivilegySlowdown();
 
 
 void CRenderDevice::End(void)
@@ -118,7 +117,6 @@ void CRenderDevice::End(void)
             g_find_chunk_counter.flush();
 #endif // FIND_CHUNK_BENCHMARK_ENABLE
 
-            CheckPrivilegySlowdown();
 
             if (g_pGamePersistent->GameType() == 1)//haCk
             {
@@ -145,37 +143,6 @@ void CRenderDevice::End(void)
 }
 
 
-volatile u32 mt_Thread_marker = 0x12345678;
-void mt_Thread(void* ptr)
-{
-	auto &device = *static_cast<CRenderDevice*>(ptr);
-    while (true)
-    {
-        // waiting for Device permission to execute
-		device.mt_csEnter.Enter();
-
-		if (device.mt_bMustExit)
-        {
-			device.mt_bMustExit = FALSE; // Important!!!
-			device.mt_csEnter.Leave(); // Important!!!
-            return;
-        }		
-        // we has granted permission to execute
-		mt_Thread_marker = device.dwFrame;
-
-		for (u32 pit = 0; pit < device.seqParallel.size(); pit++)
-			device.seqParallel[pit]();
-		device.seqParallel.clear_not_free();
-		device.seqFrameMT.Process(rp_Frame);
-
-        // now we give control to device - signals that we are ended our work
-		device.mt_csEnter.Leave();
-        // waits for device signal to continue - to start again
-		device.mt_csLeave.Enter();
-        // returns sync signal to device
-		device.mt_csLeave.Leave();
-    }		
-}
 
 #include "igame_level.h"
 void CRenderDevice::PreCache(u32 amount, bool b_draw_loadscreen, bool b_wait_user_input)
@@ -218,11 +185,11 @@ void CRenderDevice::on_idle()
         return;
     }
 
-#ifdef DEDICATED_SERVER
-    u32 FrameStartTime = TimerGlobal.GetElapsed_ms();
-#endif
-    if (psDeviceFlags.test(rsStatistic)) 
-		g_bEnableStatGather = TRUE;
+
+	const auto FrameStartTime = std::chrono::high_resolution_clock::now();
+
+
+	if (psDeviceFlags.test(rsStatistic))	g_bEnableStatGather	= TRUE;
     else g_bEnableStatGather = FALSE;
     if (g_loading_events.size())
     {
@@ -232,8 +199,8 @@ void CRenderDevice::on_idle()
         return;
     }
     
-	if (!Device.dwPrecacheFrame && !g_SASH.IsBenchmarkRunning() && g_bLoaded)
-        g_SASH.StartBenchmark();
+	//if (!Device.dwPrecacheFrame && !g_SASH.IsBenchmarkRunning() && g_bLoaded)
+    //    g_SASH.StartBenchmark();
 
     FrameMove();
 
@@ -262,25 +229,7 @@ void CRenderDevice::on_idle()
     mView_saved = mView;
     mProject_saved = mProject;
     
-    // *** Resume threads
-    // Capture end point - thread must run only ONE cycle
-    // Release start point - allow thread to run
-    mt_csLeave.Enter();
-    mt_csEnter.Leave();
-
-#ifdef ECO_RENDER // ECO_RENDER START
-	static u32 time_frame = 0;
-	u32 time_curr = timeGetTime();
-	u32 time_diff = time_curr - time_frame;
-	time_frame = time_curr;
-	u32 optimal = 10;
-	if (Device.Paused() || IsMainMenuActive())
-		optimal = 32;
-	if (time_diff < optimal)
-		Sleep(optimal - time_diff);
-#else
-	Sleep(0);
-#endif // ECO_RENDER END
+	syncProcessFrame.Set(); // allow secondary thread to do its job
 
 #ifndef DEDICATED_SERVER
     Statistic->RenderTOTAL_Real.FrameStart();
@@ -296,29 +245,27 @@ void CRenderDevice::on_idle()
     Statistic->RenderTOTAL_Real.End();
     Statistic->RenderTOTAL_Real.FrameEnd();
     Statistic->RenderTOTAL.accum = Statistic->RenderTOTAL_Real.accum;
-#endif // #ifndef DEDICATED_SERVER
-    // *** Suspend threads
-    // Capture startup point
-    // Release end point - allow thread to wait for startup point
-    mt_csEnter.Enter();
-    mt_csLeave.Leave();
+	
+	const auto FrameEndTime = std::chrono::high_resolution_clock::now();
+	const std::chrono::duration<double, std::milli> FrameElapsedTime = FrameEndTime - FrameStartTime;
 
-    // Ensure, that second thread gets chance to execute anyway
-    if (dwFrame != mt_Thread_marker)
-    {
-        for (u32 pit = 0; pit < Device.seqParallel.size(); pit++)
-            Device.seqParallel[pit]();
-        Device.seqParallel.clear_not_free();
-        seqFrameMT.Process(rp_Frame);
-    }
+	constexpr u32 menuFPSlimit{ 60 }, pauseFPSlimit{ 60 };
+	const u32 curFPSLimit = IsMainMenuActive() ? menuFPSlimit : Device.Paused() ? pauseFPSlimit : g_dwFPSlimit;
+	if (curFPSLimit > 0)
+	{
+		const std::chrono::duration<double, std::milli> FpsLimitMs{ std::floor(1000.f / (curFPSLimit + 1)) };
+		if (FrameElapsedTime < FpsLimitMs)
+		{
+			const auto TimeToSleep = FpsLimitMs - FrameElapsedTime;
+			//std::this_thread::sleep_until(FrameEndTime + TimeToSleep); // ÷àñòî ñïèò áîëüøå, ÷åì íàäî. Ñêîðåå âñåãî èç-çà îêðóãëåíèé â áîëüøóþ ñòîðîíó.
+			Sleep(iFloor(TimeToSleep.count()));
+			//Msg("~~[%s] waited [%f] ms", __FUNCTION__, TimeToSleep.count());
+		}
+	}
 
-#ifdef DEDICATED_SERVER
-    u32 FrameEndTime = TimerGlobal.GetElapsed_ms();
-    u32 FrameTime = (FrameEndTime - FrameStartTime);
-    u32 DSUpdateDelta = 1000 / g_svDedicateServerUpdateReate;
-    if (FrameTime < DSUpdateDelta)
-        Sleep(DSUpdateDelta - FrameTime);
-#endif
+	syncFrameDone.WaitEx(66); // wait until secondary thread finish its job
+	
+
     if (!b_is_Active)
         Sleep(1);
 }
@@ -360,7 +307,8 @@ void CRenderDevice::Run()
     // DUMP_PHASE;
     g_bLoaded = FALSE;
     Log("Starting engine...");
-    thread_name("X-RAY Primary thread");
+	set_current_thread_name		("X-RAY Primary thread");
+
     // Startup timers and calculate timer delta
     dwTimeGlobal = 0;
     Timer_MM_Delta = 0;
@@ -371,24 +319,44 @@ void CRenderDevice::Run()
         u32 time_local = TimerAsync();
         Timer_MM_Delta = time_system - time_local;
     }
-    // Start all threads
-    // InitializeCriticalSection (&mt_csEnter);
-    // InitializeCriticalSection (&mt_csLeave);
-    mt_csEnter.Enter();
-    mt_bMustExit = FALSE;
-    thread_spawn(mt_Thread, "X-RAY Secondary thread", 0, this);
-    // Message cycle
+	// Start all threads
+	mt_bMustExit = false;
+	// KRodin: TODO: Use C++20 std::jthread
+	std::thread second_thread([] (void* context) {
+		set_current_thread_name("X-RAY Secondary thread");
+
+		CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+
+		auto& device = *static_cast<CRenderDevice*>(context);
+
+		while (true) {
+			device.syncProcessFrame.Wait();
+
+			if (device.mt_bMustExit) {
+				device.syncThreadExit.Set();
+				return;
+			}
+
+			for (const auto& Func : device.seqParallel)
+				Func();
+			device.seqParallel.clear_and_free();
+			device.seqFrameMT.Process(rp_Frame);
+
+			device.syncFrameDone.Set();
+		}
+	}, this);
+
+	// Message cycle
     seqAppStart.Process(rp_AppStart);
 
     m_pRender->ClearTarget();
     message_loop();
     seqAppEnd.Process(rp_AppEnd);
     // Stop Balance-Thread
-    mt_bMustExit = TRUE;
-    mt_csEnter.Leave();
-    while (mt_bMustExit) Sleep(0);
-    // DeleteCriticalSection (&mt_csEnter);
-    // DeleteCriticalSection (&mt_csLeave);
+	mt_bMustExit = true;
+	syncProcessFrame.Set();
+	syncThreadExit.Wait();
+	second_thread.join();
 }
 
 u32 app_inactive_time = 0;

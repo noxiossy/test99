@@ -15,13 +15,14 @@
 #include "weapon.h"
 #include "eatable_item_object.h" 
 #include "Missile.h"
-#include "game_cl_base_weapon_usage_statistic.h"
 #include "LevelGameDef.h"
 #include "clsid_game.h"
 #include "ui\UIBuyWndShared.h"
 #include "UIGameCTA.h"
 #include "string_table.h"
 #include "../xrEngine/xr_ioconsole.h"
+
+using namespace std::placeholders;
 
 //-------------------------------------------------------------
 u32			g_sv_cta_dwInvincibleTime		=		5;	//5 seconds
@@ -398,17 +399,6 @@ void game_sv_CaptureTheArtefact::OnPlayerConnect(ClientID id_who)
 	ps_who->setFlag(GAME_PLAYER_FLAG_SPECTATOR);
 	
 	ps_who->resetFlag(GAME_PLAYER_FLAG_SKIP);
-
-	if ((g_dedicated_server || m_bSpectatorMode) && (xrCData == m_server->GetServerClient()) )
-	{
-		ps_who->setFlag(GAME_PLAYER_FLAG_SKIP);
-		return;
-	}
-
-	/*if (!xrCData->flags.bReconnect) 
-		Money_SetStart				(id_who);
-
-	SetPlayersDefItems				(ps_who);*/
 }
 void game_sv_CaptureTheArtefact::OnPlayerConnectFinished(ClientID id_who)
 {
@@ -453,7 +443,7 @@ void game_sv_CaptureTheArtefact::OnPlayerDisconnect(ClientID id_who, LPSTR Name,
 	
 	TeamsMap::iterator te = teams.end();
 	TeamsMap::iterator artefactOwnerTeam = std::find_if(teams.begin(), te, 
-        [&](const TeamPair& tp) { return SearchOwnerIdFunctor()(tp, GameID); });
+		std::bind(SearchOwnerIdFunctor(), _1, GameID));
 	if (artefactOwnerTeam != te)
 	{
 		DropArtefact(artefactOwnerTeam->second.artefactOwner, artefactOwnerTeam->second.artefact);
@@ -1531,7 +1521,6 @@ void game_sv_CaptureTheArtefact::OnPlayerKillPlayer(game_PlayerState* ps_killer,
 	bool CanGiveBonus					= OnKillResult(KillRes, ps_killer, ps_killed);
 	if (CanGiveBonus) 
 		OnGiveBonus						(KillRes, ps_killer, ps_killed, KillType, SpecialKillType, pWeaponA);
-	Game().m_WeaponUsageStatistic->OnPlayerKillPlayer(ps_killer,KillType,SpecialKillType);
 	signal_Syncronize();
 }
 
@@ -1576,7 +1565,7 @@ void game_sv_CaptureTheArtefact::ProcessPlayerDeath(game_PlayerState *playerStat
 	}
 	TeamsMap::iterator te = teams.end();
 	TeamsMap::iterator childArtefactTeam = std::find_if(teams.begin(), te, 
-        [&](const TeamPair& tp) { return SearchOwnerIdFunctor()(tp, playerState->GameID); });
+		std::bind(SearchOwnerIdFunctor(), _1, playerState->GameID));
 	if (childArtefactTeam != te)
 	{
 		DropArtefact(childArtefactTeam->second.artefactOwner, childArtefactTeam->second.artefact);
@@ -1591,7 +1580,6 @@ void game_sv_CaptureTheArtefact::ProcessPlayerDeath(game_PlayerState *playerStat
 			childArtefactTeam->second.artefactOwner->ID,
 			childArtefactTeam->second.artefact->ID, true);*/
 	}
-	Game().m_WeaponUsageStatistic->OnPlayerKilled(playerState);
 }
 
 /*void game_sv_CaptureTheArtefact::ProcessPlayerKill(game_PlayerState * playerState)
@@ -1640,7 +1628,7 @@ BOOL game_sv_CaptureTheArtefact::OnTouch(u16 eid_who, u16 eid_target, BOOL bForc
 	/*VERIFY(e_what	); // <- not used because IMHO next code work faster...*/
 	TeamsMap::iterator te = teams.end();
 	TeamsMap::iterator artefactOfTeam = std::find_if(teams.begin(), te, 
-		[&](const TeamPair& tp) { return SearchArtefactIdFunctor()(tp, eid_target); });
+		std::bind(SearchArtefactIdFunctor(), _1, eid_target));
 	if (artefactOfTeam != te)
 	{
 		CSE_ALifeItemArtefact *tempArtefact = artefactOfTeam->second.artefact;
@@ -1686,7 +1674,7 @@ BOOL game_sv_CaptureTheArtefact::OnTouch(u16 eid_who, u16 eid_target, BOOL bForc
 					return FALSE;
 				}
 				if (std::find_if(teams.begin(), te,
-                    [&](const TeamPair& tp) { return SearchOwnerIdFunctor()(tp, e_who->ID); }) != te)
+					std::bind(SearchOwnerIdFunctor(), _1, e_who->ID)) != te)
 				{
 					return FALSE;
 				}
@@ -1697,7 +1685,7 @@ BOOL game_sv_CaptureTheArtefact::OnTouch(u16 eid_who, u16 eid_target, BOOL bForc
 		} else
 		{
 			if (std::find_if(teams.begin(), te,
-                [&](const TeamPair& tp) { return SearchOwnerIdFunctor()(tp, e_who->ID); }) != te)
+				std::bind(SearchOwnerIdFunctor(), _1, e_who->ID)) != te)
 			{
 				return FALSE;
 			}
@@ -1780,7 +1768,7 @@ void game_sv_CaptureTheArtefact::OnDetach(u16 eid_who, u16 eid_target)
 {
 	TeamsMap::iterator te = teams.end();
 	TeamsMap::iterator artefactOfTeam = std::find_if(teams.begin(), te, 
-        [&](const TeamPair& tp) { return SearchArtefactIdFunctor()(tp, eid_target); });
+		std::bind(SearchArtefactIdFunctor(), _1, eid_target));
 	
 	CSE_ActorMP *e_who = smart_cast<CSE_ActorMP*>(m_server->ID_to_entity(eid_who));
 	CSE_Abstract *e_item = m_server->ID_to_entity(eid_target);
@@ -1817,7 +1805,7 @@ BOOL game_sv_CaptureTheArtefact::OnActivate(u16 eid_who, u16 eid_target)
 {
 	TeamsMap::iterator te = teams.end();
 	TeamsMap::iterator artefactOfTeam = std::find_if(teams.begin(), te, 
-        [&](const TeamPair& tp) { return SearchArtefactIdFunctor()(tp, eid_target); });
+		std::bind(SearchArtefactIdFunctor(), _1, eid_target));
 	
 	CSE_ActorMP *e_who = smart_cast<CSE_ActorMP*>(m_server->ID_to_entity(eid_who));
 	CSE_Abstract *e_item = m_server->ID_to_entity(eid_target);
@@ -2177,7 +2165,6 @@ void game_sv_CaptureTheArtefact::ActorDeliverArtefactOnBase(CSE_ActorMP *actor, 
 	Set_RankUp_Allowed(false);
 	
 	signal_Syncronize();
-	Game().m_WeaponUsageStatistic->OnPlayerBringArtefact(ps);
 	AskAllToUpdateStatistics();
 	StartNewRound();
 }
@@ -2489,7 +2476,7 @@ void game_sv_CaptureTheArtefact::ReadOptions(shared_str &options)
 	g_sv_cta_activatedArtefactRet = get_option_i(*options,"actret",	g_sv_cta_activatedArtefactRet);	// in (sec)
 
 	m_bSpectatorMode = false;
-	if (!g_dedicated_server && (get_option_i(*options,"spectr",-1) != -1))
+	if ((get_option_i(*options,"spectr",-1) != -1))
 	{
 		m_bSpectatorMode = true;
 		m_dwSM_SwitchDelta =  get_option_i(*options,"spectr",0)*1000;

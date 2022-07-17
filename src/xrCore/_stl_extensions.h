@@ -135,6 +135,9 @@ private:
 
 public:
     typedef allocator allocator_type;
+	using const_reference = typename inherited::const_reference;
+	using size_type = typename inherited::size_type;
+	using reference = typename inherited::reference;
 
 public:
     xr_vector() : inherited() {}
@@ -184,7 +187,7 @@ template <typename T, typename allocator = xalloc<T> >
 class xr_deque : public std::deque < T, allocator >
 {
 public:
-    typedef typename allocator allocator_type;
+    typedef			 allocator allocator_type;
     typedef typename allocator_type::value_type value_type;
     typedef typename allocator_type::size_type size_type;
     u32 size() const { return (u32)__super::size(); }
@@ -221,8 +224,8 @@ protected:
 template <typename T, typename allocator = xalloc<T> > class xr_list : public std::list < T, allocator > { public: u32 size() const { return (u32)__super::size(); } };
 template <typename K, class P = std::less<K>, typename allocator = xalloc<K> > class xr_set : public std::set < K, P, allocator > { public: u32 size() const { return (u32)__super::size(); } };
 template <typename K, class P = std::less<K>, typename allocator = xalloc<K> > class xr_multiset : public std::multiset < K, P, allocator > { public: u32 size() const { return (u32)__super::size(); } };
-template <typename K, class V, class P = std::less<K>, typename allocator = xalloc<std::pair<K, V> > > class xr_map : public std::map < K, V, P, allocator > { public: u32 size() const { return (u32)__super::size(); } };
-template <typename K, class V, class P = std::less<K>, typename allocator = xalloc<std::pair<K, V> > > class xr_multimap : public std::multimap < K, V, P, allocator > { public: u32 size() const { return (u32)__super::size(); } };
+template <typename K, class V, class P = std::less<K>, typename allocator = xalloc<std::pair<const K, V> > > class xr_map : public std::map < K, V, P, allocator > { public: u32 size() const { return (u32)__super::size(); } };
+template <typename K, class V, class P = std::less<K>, typename allocator = xalloc<std::pair<const K, V> > > class xr_multimap : public std::multimap < K, V, P, allocator > { public: u32 size() const { return (u32)__super::size(); } };
 
 #ifdef STLPORT
 template <typename V, class _HashFcn = std::hash<V>, class _EqualKey = std::equal_to<V>, typename allocator = xalloc<V> > class xr_hash_set : public std::hash_set < V, _HashFcn, _EqualKey, allocator > { public: u32 size() const { return (u32)__super::size(); } };
@@ -231,19 +234,17 @@ template <typename V, class _HashFcn = std::hash<V>, class _EqualKey = std::equa
 template <typename K, class V, class _HashFcn = std::hash<K>, class _EqualKey = std::equal_to<K>, typename allocator = xalloc<std::pair<K, V> > > class xr_hash_map : public std::hash_map < K, V, _HashFcn, _EqualKey, allocator > { public: u32 size() const { return (u32)__super::size(); } };
 template <typename K, class V, class _HashFcn = std::hash<K>, class _EqualKey = std::equal_to<K>, typename allocator = xalloc<std::pair<K, V> > > class xr_hash_multimap : public std::hash_multimap < K, V, _HashFcn, _EqualKey, allocator > { public: u32 size() const { return (u32)__super::size(); } };
 #else
-template <typename K, class V, class _Traits = stdext::hash_compare<K, std::less<K> >, typename allocator = xalloc<std::pair<K, V> > > class xr_hash_map : public stdext::hash_map < K, V, _Traits, allocator > { public: u32 size() const { return (u32)__super::size(); } };
+template <typename K, class V, class _Traits = stdext::hash_compare<K, std::less<K> >, typename allocator = xalloc<std::pair<const K, V> > > class xr_hash_map : public stdext::hash_map < K, V, _Traits, allocator > { public: u32 size() const { return (u32)__super::size(); } };
 #endif // #ifdef STLPORT
 
 #endif
 
 template <class _Ty1, class _Ty2> inline std::pair<_Ty1, _Ty2> mk_pair(_Ty1 _Val1, _Ty2 _Val2) { return (std::pair<_Ty1, _Ty2>(_Val1, _Val2)); }
 
-struct pred_str : public std::binary_function < char*, char*, bool >
-{
+struct pred_str {	
     IC bool operator()(const char* x, const char* y) const { return xr_strcmp(x, y) < 0; }
 };
-struct pred_stri : public std::binary_function < char*, char*, bool >
-{
+struct pred_stri {	
     IC bool operator()(const char* x, const char* y) const { return stricmp(x, y) < 0; }
 };
 
@@ -305,5 +306,10 @@ DEFINE_VECTOR(int*, LPIntVec, LPIntIt);
 DEFINE_VECTOR(AnsiString, AStringVec, AStringIt);
 DEFINE_VECTOR(AnsiString*, LPAStringVec, LPAStringIt);
 #endif
+
+#include <unordered_map>
+template <typename K, class V, class Hasher = std::hash<K>, class Traits = std::equal_to<K>,
+    typename allocator = xalloc<std::pair<const K, V>>>
+    using xr_unordered_map = std::unordered_map<K, V, Hasher, Traits, allocator>;
 
 #endif

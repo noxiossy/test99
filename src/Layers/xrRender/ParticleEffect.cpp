@@ -5,8 +5,6 @@
 
 #ifndef _EDITOR
 #include <xmmintrin.h>
-#include "../../xrCPU_Pipe/ttapi.h"
-#pragma comment(lib,"xrCPU_Pipe.lib")
 #endif
 
 using namespace PAPI;
@@ -541,7 +539,7 @@ void CParticleEffect::Render(float )
 			FVF::LIT* pv_start	= (FVF::LIT*)RCache.Vertex.Lock(p_cnt*4*4,geom->vb_stride,dwOffset);
 			FVF::LIT* pv		= pv_start;
 
-			u32 nWorkers = ttapi_GetWorkersCount();
+/*			u32 nWorkers = ttapi_GetWorkersCount();
 
 			if (p_cnt < (nWorkers * 64))
 				nWorkers = 1;
@@ -566,7 +564,15 @@ void CParticleEffect::Render(float )
 				ttapi_AddWorker( ParticleRenderStream , (LPVOID) &prsParams[i] );
 			}
 
-			ttapi_RunAllWorkers();
+			ttapi_RunAllWorkers();*/
+
+			PRS_PARAMS prsParams;
+			prsParams.pPE  = this;
+			prsParams.particles = particles;
+			prsParams.p_from = 0;
+			prsParams.p_to = p_cnt;
+			prsParams.pv   = pv;
+			ParticleRenderStream( &prsParams );
 
 			dwCount = p_cnt<<2;
 

@@ -2,7 +2,6 @@
 //#include "StdAfx.h"
 #include "script_additional_libs.h"
 #include <random>
-#include "../../build_config_defines.h"
 
 /******************** BIT ********************/
 int ROL(int a, int n)
@@ -354,10 +353,6 @@ int open_table(lua_State *L)
 /******************** TABLE END ********************/
 void open_additional_libs(lua_State *L)
 {
-#ifdef USE_LUAJIT_ONE
-    open_bit(L);
-    open_math(L);
-#endif
     open_string(L);
     open_table(L);
 }

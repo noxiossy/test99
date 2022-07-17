@@ -67,6 +67,7 @@ static int start_year = 1999; // 1999
 #include "../xrGameSpy/gamespy/md5c.c"
 #include <ctype.h>
 
+#include <thread>
 #define DEFAULT_MODULE_HASH "3CAABCFCFF6F3A810019C6A72180F166"
 static char szEngineHash[33] = DEFAULT_MODULE_HASH;
 
@@ -271,7 +272,7 @@ PROTECT_API void InitConsole()
     ////SECUROM_MARKER_SECURITY_OFF(5)
 }
 
-PROTECT_API void InitInput()
+void InitInput		()
 {
     BOOL bCaptureInput = !strstr(Core.Params, "-i");
 
@@ -282,12 +283,12 @@ void destroyInput()
     xr_delete(pInput);
 }
 
-PROTECT_API void InitSound1()
+void InitSound1		()
 {
     CSound_manager_interface::_create(0);
 }
 
-PROTECT_API void InitSound2()
+void InitSound2		()
 {
     CSound_manager_interface::_create(1);
 }
@@ -321,34 +322,6 @@ void execUserScript()
 {
     Console->Execute("default_controls");
     Console->ExecuteScript(Console->ConfigFile);
-}
-
-void slowdownthread(void*)
-{
-    // Sleep (30*1000);
-    for (;;)
-    {
-        if (Device.Statistic->fFPS < 30) Sleep(1);
-        if (Device.mt_bMustExit) return;
-        if (0 == pSettings) return;
-        if (0 == Console) return;
-        if (0 == pInput) return;
-        if (0 == pApp) return;
-    }
-}
-void CheckPrivilegySlowdown()
-{
-#ifdef DEBUG
-    if (strstr(Core.Params, "-slowdown"))
-    {
-        thread_spawn(slowdownthread, "slowdown", 0, 0);
-    }
-    if (strstr(Core.Params, "-slowdown2x"))
-    {
-        thread_spawn(slowdownthread, "slowdown", 0, 0);
-        thread_spawn(slowdownthread, "slowdown", 0, 0);
-    }
-#endif // DEBUG
 }
 
 void Startup()
@@ -605,48 +578,6 @@ struct damn_keys_filter
 #undef dwFilterKeysStructSize
 #undef dwToggleKeysStructSize
 
-// Фунция для тупых требований THQ и тупых американских пользователей
-BOOL IsOutOfVirtualMemory()
-{
-#define VIRT_ERROR_SIZE 256
-#define VIRT_MESSAGE_SIZE 512
-
-    //SECUROM_MARKER_HIGH_SECURITY_ON(1)
-
-    MEMORYSTATUSEX statex;
-    DWORD dwPageFileInMB = 0;
-    DWORD dwPhysMemInMB = 0;
-    HINSTANCE hApp = 0;
-    char pszError[VIRT_ERROR_SIZE];
-    char pszMessage[VIRT_MESSAGE_SIZE];
-
-    ZeroMemory(&statex, sizeof(MEMORYSTATUSEX));
-    statex.dwLength = sizeof(MEMORYSTATUSEX);
-
-    if (!GlobalMemoryStatusEx(&statex))
-        return 0;
-
-    dwPageFileInMB = (DWORD)(statex.ullTotalPageFile / (1024 * 1024));
-    dwPhysMemInMB = (DWORD)(statex.ullTotalPhys / (1024 * 1024));
-
-    // Довольно отфонарное условие
-    if ((dwPhysMemInMB > 500) && ((dwPageFileInMB + dwPhysMemInMB) > 2500))
-        return 0;
-
-    hApp = GetModuleHandle(NULL);
-
-    if (!LoadString(hApp, RC_VIRT_MEM_ERROR, pszError, VIRT_ERROR_SIZE))
-        return 0;
-
-    if (!LoadString(hApp, RC_VIRT_MEM_TEXT, pszMessage, VIRT_MESSAGE_SIZE))
-        return 0;
-
-    MessageBox(NULL, pszMessage, pszError, MB_OK | MB_ICONHAND);
-
-    //SECUROM_MARKER_HIGH_SECURITY_OFF(1)
-
-    return 1;
-}
 
 #include "xr_ioc_cmd.h"
 
@@ -738,8 +669,8 @@ int APIENTRY WinMain_impl(HINSTANCE hInstance,
 #ifndef DEDICATED_SERVER
 
     // Check for virtual memory
-    if ((strstr(lpCmdLine, "--skipmemcheck") == NULL) && IsOutOfVirtualMemory())
-        return 0;
+    //if ((strstr(lpCmdLine, "--skipmemcheck") == NULL) && IsOutOfVirtualMemory())
+     //   return 0;
 
     // Check for another instance
 #ifdef NO_MULTI_INSTANCES
@@ -766,7 +697,7 @@ int APIENTRY WinMain_impl(HINSTANCE hInstance,
     g_dedicated_server = true;
 #endif // DEDICATED_SERVER
 
-    SetThreadAffinityMask(GetCurrentThread(), 1);
+    //SetThreadAffinityMask(GetCurrentThread(), 1);
 
     // Title window
     logoWindow = CreateDialog(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_STARTUP), 0, logDlgProc);

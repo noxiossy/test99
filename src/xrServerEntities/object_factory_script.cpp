@@ -8,8 +8,6 @@
 
 #include "pch_script.h"
 
-#ifndef DEDICATED_SERVER_ONLY
-
 #include "object_factory.h"
 #include "ai_space.h"
 #include "script_engine.h"
@@ -61,15 +59,8 @@ void CObjectFactory::register_script_class			(LPCSTR unknown_class, LPCSTR clsid
 	);
 }
 
-#ifndef NO_XR_GAME
-	ENGINE_API	bool g_dedicated_server;
-#endif // NO_XR_GAME
-
 void CObjectFactory::register_script_classes()
 {
-#ifndef NO_XR_GAME
-	if (!g_dedicated_server)
-#endif // NO_XR_GAME
 		ai();
 }
 
@@ -86,9 +77,9 @@ void CObjectFactory::register_script	() const
 	const_iterator				I = clsids().begin(), B = I;
 	const_iterator				E = clsids().end();
 	for ( ; I != E; ++I)
-		instance.enum_			("_clsid")[luabind::value(*(*I)->script_clsid(),int(I - B))];
+		instance = std::move(instance).enum_("_clsid")[luabind::value(*(*I)->script_clsid(), int(I - B))];
 
-	luabind::module				(ai().script_engine().lua())[instance];
+	luabind::module(ai().script_engine().lua())[std::move(instance)];
 }
 
 #pragma optimize("s",on)
@@ -101,5 +92,3 @@ void CObjectFactory::script_register(lua_State *L)
 			.def("register",	(void (CObjectFactory::*)(LPCSTR,LPCSTR,LPCSTR))(&CObjectFactory::register_script_class))
 	];
 }
-
-#endif // #ifndef DEDICATED_SERVER_ONLY

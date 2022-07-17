@@ -48,14 +48,13 @@ ENGINE_API bool is_enough_address_space_available()
         return (*(u32*)&system_info.lpMaximumApplicationAddress) > 0x90000000;
 }
 
-#ifndef DEDICATED_SERVER
 
 void CEngineAPI::InitializeNotDedicated()
 {
     LPCSTR r2_name = "xrRender_R2.dll";
-    LPCSTR r3_name = "xrRender_R3.dll";
-    LPCSTR r4_name = "xrRender_R4.dll";
-    if (psDeviceFlags.test(rsR4))
+    //LPCSTR r3_name = "xrRender_R3.dll";
+    //LPCSTR r4_name = "xrRender_R4.dll";
+    /*if (psDeviceFlags.test(rsR4))
     {
         // try to initialize R4
         Log("Loading DLL:", r4_name);
@@ -82,7 +81,7 @@ void CEngineAPI::InitializeNotDedicated()
         else
             g_current_renderer = 3;
     }
-
+	*/
     if (psDeviceFlags.test(rsR2))
     {
         // try to initialize R2
@@ -99,25 +98,21 @@ void CEngineAPI::InitializeNotDedicated()
             g_current_renderer = 2;
     }
 }
-#endif // DEDICATED_SERVER
-
 
 void CEngineAPI::Initialize(void)
 {
     //////////////////////////////////////////////////////////////////////////
     // render
-    LPCSTR r1_name = "xrRender_R1.dll";
+	LPCSTR			r1_name	= "xrRender_R2.dll";
 
-#ifndef DEDICATED_SERVER
     InitializeNotDedicated();
-#endif // DEDICATED_SERVER
 
     if (0 == hRender)
     {
         // try to load R1
         psDeviceFlags.set(rsR4, FALSE);
         psDeviceFlags.set(rsR3, FALSE);
-        psDeviceFlags.set(rsR2, FALSE);
+	//	psDeviceFlags.set	(rsR2,FALSE);
         renderer_value = 0; //con cmd
 
         Log("Loading DLL:", r1_name);
@@ -178,34 +173,21 @@ extern "C" {
 
 void CEngineAPI::CreateRendererList()
 {
-#ifdef DEDICATED_SERVER
-
-    vid_quality_token = xr_alloc<xr_token>(2);
-
-    vid_quality_token[0].id = 0;
-    vid_quality_token[0].name = xr_strdup("renderer_r1");
-
-    vid_quality_token[1].id = -1;
-    vid_quality_token[1].name = NULL;
-
-#else
     // TODO: ask renderers if they are supported!
     if (vid_quality_token != NULL) return;
     bool bSupports_r2 = false;
     bool bSupports_r2_5 = false;
-    bool bSupports_r3 = false;
-    bool bSupports_r4 = false;
+    //bool bSupports_r3 = false;
+    //bool bSupports_r4 = false;
 
     LPCSTR r2_name = "xrRender_R2.dll";
-    LPCSTR r3_name = "xrRender_R3.dll";
-    LPCSTR r4_name = "xrRender_R4.dll";
 
     if (strstr(Core.Params, "-perfhud_hack"))
     {
         bSupports_r2 = true;
         bSupports_r2_5 = true;
-        bSupports_r3 = true;
-        bSupports_r4 = true;
+        //bSupports_r3 = true;
+        //bSupports_r4 = true;
     }
     else
     {
@@ -221,7 +203,7 @@ void CEngineAPI::CreateRendererList()
             FreeLibrary(hRender);
         }
 
-        // try to initialize R3
+        /*// try to initialize R3
         Log("Loading DLL:", r3_name);
         // Hide "d3d10.dll not found" message box for XP
         SetErrorMode(SEM_FAILCRITICALERRORS);
@@ -250,6 +232,7 @@ void CEngineAPI::CreateRendererList()
             bSupports_r4 = test_dx11_rendering();
             FreeLibrary(hRender);
         }
+		*/
     }
 
     hRender = 0;
@@ -263,10 +246,10 @@ void CEngineAPI::CreateRendererList()
     }
     if (proceed &= bSupports_r2_5, proceed)
         _tmp.push_back("renderer_r2.5");
-    if (proceed &= bSupports_r3, proceed)
-        _tmp.push_back("renderer_r3");
-    if (proceed &= bSupports_r4, proceed)
-        _tmp.push_back("renderer_r4");
+    //if (proceed &= bSupports_r3, proceed)
+    //    _tmp.push_back("renderer_r3");
+    //if (proceed &= bSupports_r4, proceed)
+    //   _tmp.push_back("renderer_r4");
     
 	u32 _cnt = _tmp.size() + 1;
     vid_quality_token = xr_alloc<xr_token>(_cnt);
@@ -285,5 +268,5 @@ void CEngineAPI::CreateRendererList()
         Msg("[%s]", _tmp[i]);
 #endif // DEBUG
     }
-#endif //#ifndef DEDICATED_SERVER
+
 }
