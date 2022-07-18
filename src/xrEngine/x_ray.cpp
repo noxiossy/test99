@@ -211,7 +211,7 @@ struct path_excluder_predicate
     xr_auth_strings_t const* m_ignore;
 };
 
-PROTECT_API void InitSettings()
+void InitSettings	()
 {
 #ifndef DEDICATED_SERVER
     Msg("EH: %s\n", ComputeModuleHash(szEngineHash));
@@ -245,7 +245,7 @@ PROTECT_API void InitSettings()
     pGameIni = xr_new<CInifile>(fname, TRUE);
     CHECK_OR_EXIT(0 != pGameIni->section_count(), make_string("Cannot find file %s.\nReinstalling application may fix this problem.", fname));
 }
-PROTECT_API void InitConsole()
+void InitConsole	()
 {
     ////SECUROM_MARKER_SECURITY_ON(5)
 
@@ -1029,20 +1029,6 @@ void CApplication::OnEvent(EVENT E, u64 P1, u64 P2)
         R_ASSERT(0 == g_pGameLevel);
         R_ASSERT(0 != g_pGamePersistent);
 
-#ifdef NO_SINGLE
-        Console->Execute("main_menu on");
-        if ((op_server == NULL) ||
-                (!xr_strlen(op_server)) ||
-                (
-                    (strstr(op_server, "/dm") || strstr(op_server, "/deathmatch") ||
-                     strstr(op_server, "/tdm") || strstr(op_server, "/teamdeathmatch") ||
-                     strstr(op_server, "/ah") || strstr(op_server, "/artefacthunt") ||
-                     strstr(op_server, "/cta") || strstr(op_server, "/capturetheartefact")
-                    ) &&
-                    !strstr(op_server, "/alife")
-                )
-           )
-#endif // #ifdef NO_SINGLE
         {
             Console->Execute("main_menu off");
             Console->Hide();
@@ -1177,7 +1163,7 @@ void CApplication::destroy_loading_shaders()
 
 //u32 calc_progress_color(u32, u32, int, int);
 
-PROTECT_API void CApplication::LoadDraw()
+void CApplication::LoadDraw		()
 {
     if (g_appLoaded) return;
     Device.dwFrame += 1;

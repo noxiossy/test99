@@ -282,12 +282,6 @@ public:
             seqParallel.erase(I);
     }
 
-    //AVO: elapsed famed counter (by alpet)
-    IC u32 frame_elapsed()
-    {
-        return frame_timer.GetElapsed_ms();
-    }
-
 public:
     void xr_stdcall on_idle();
     bool xr_stdcall on_message(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, LRESULT& result);
