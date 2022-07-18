@@ -43,7 +43,6 @@ ref_light precache_light = 0;
 
 BOOL CRenderDevice::Begin()
 {
-#ifndef DEDICATED_SERVER
     switch (m_pRender->GetDeviceState())
     {
     case IRenderDeviceRender::dsOK:
@@ -68,7 +67,7 @@ BOOL CRenderDevice::Begin()
 
     FPU::m24r();
     g_bRendering = TRUE;
-#endif
+	
     return TRUE;
 }
 
@@ -147,12 +146,8 @@ void CRenderDevice::End(void)
 #include "igame_level.h"
 void CRenderDevice::PreCache(u32 amount, bool b_draw_loadscreen, bool b_wait_user_input)
 {
-#ifdef DEDICATED_SERVER
-    amount = 0;
-#else
     if (m_pRender->GetForceGPU_REF())
 		amount = 0;
-#endif
 
     dwPrecacheFrame = dwPrecacheTotal = amount;
     if (amount && !precache_light && g_pGameLevel && g_loading_events.empty())
@@ -231,7 +226,6 @@ void CRenderDevice::on_idle()
     
 	syncProcessFrame.Set(); // allow secondary thread to do its job
 
-#ifndef DEDICATED_SERVER
     Statistic->RenderTOTAL_Real.FrameStart();
     Statistic->RenderTOTAL_Real.Begin();
 	
@@ -498,12 +492,10 @@ void CRenderDevice::OnWM_Activate(WPARAM wParam, LPARAM lParam)
             Device.seqAppActivate.Process(rp_AppActivate);
             app_inactive_time += TimerMM.GetElapsed_ms() - app_inactive_time_start;
 
-#ifndef DEDICATED_SERVER
 # ifdef INGAME_EDITOR
             if (!editor())
 # endif // #ifdef INGAME_EDITOR
                 ShowCursor(FALSE);
-#endif // #ifndef DEDICATED_SERVER
         }
         else
         {
