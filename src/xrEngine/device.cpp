@@ -37,6 +37,7 @@ ENGINE_API CLoadScreenRenderer load_screen_renderer;
 
 
 ENGINE_API BOOL g_bRendering = FALSE;
+u32 g_dwFPSlimit = 60;
 
 BOOL g_bLoaded = FALSE;
 ref_light precache_light = 0;
