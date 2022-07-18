@@ -30,7 +30,7 @@
     <ProjectGuid>{963BA4E5-499A-454D-B002-1D5ECE0527A6}</ProjectGuid>
     <RootNamespace>xrRender_R2</RootNamespace>
     <Keyword>Win32Proj</Keyword>
-    <WindowsTargetPlatformVersion>10</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Mixed|Win32'" Label="Configuration">
@@ -163,7 +163,7 @@
       <OmitFramePointers>true</OmitFramePointers>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
       <WholeProgramOptimization>true</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>.;$(SolutionDir)3rd party\luajit-2\src\;$(SolutionDir)3rd party\luabind\;$(xrSdkDir)include;$(xrSdkDir)include\OpenAutomate;$(xrSdkDir)include\nvapi;$(dxSdkDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;$(SolutionDir)3rd party/luabind/include;$(SolutionDir)3rd party/imdexlib;$(SolutionDir)3rd party\luajit-2\src\;$(SolutionDir)3rd party\luabind\;$(xrSdkDir)include;$(xrSdkDir)include\OpenAutomate;$(xrSdkDir)include\nvapi;$(dxSdkDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;XRRENDER_R2_EXPORTS;_SECURE_SCL=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <ExceptionHandling />
@@ -180,7 +180,7 @@
       <MinimalRebuild>false</MinimalRebuild>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>nvapi.lib;D3dx9.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>xrEngine.lib;nvapi.lib;D3dx9.lib;LuaJIT.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)3rd party\luajit-2\bin\$(PlatformShortName)\;$(xrSdkDir)libraries;$(xrLibDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <SubSystem>NotSet</SubSystem>
       <LargeAddressAware>true</LargeAddressAware>
@@ -202,7 +202,7 @@
       <OmitFramePointers>true</OmitFramePointers>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
       <WholeProgramOptimization>true</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>.;$(SolutionDir)3rd party\luajit-2\src\;$(SolutionDir)3rd party\luabind\;$(xrSdkDir)include;$(XRAY_16X_LIBS)OpenAutomate\inc;$(XRAY_16X_LIBS)nvapi;$(DXSDK_DIR)Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;$(SolutionDir)3rd party/luabind/include;$(SolutionDir)3rd party/imdexlib;$(SolutionDir)3rd party\luajit-2\src\;$(SolutionDir)3rd party\luabind\;$(xrSdkDir)include;$(xrSdkDir)include\OpenAutomate;$(xrSdkDir)include\nvapi;$(dxSdkDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;XRRENDER_R2_EXPORTS;_SECURE_SCL=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <ExceptionHandling>
@@ -220,7 +220,7 @@
       <UndefinePreprocessorDefinitions>USE_LUAJIT_ONE</UndefinePreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>nvapi.lib;oalib.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>xrEngine.lib;nvapi.lib;D3dx9.lib;LuaJIT.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)3rd party\luajit-2\src\;$(xrSdkDir)libraries\x64;$(xrLibDir);$(DXSDK_DIR)Lib\x86;$(XRAY_16X_LIBS)OpenAutomate\libraries;$(SolutionDir)x64\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <SubSystem>NotSet</SubSystem>
       <LargeAddressAware>true</LargeAddressAware>

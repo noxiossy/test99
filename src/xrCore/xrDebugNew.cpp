@@ -46,9 +46,9 @@ static BOOL bException = FALSE;
 
 #ifdef USE_BUG_TRAP
 # include <BugTrap/source/BugTrap.h> // for BugTrap functionality
-#ifdef __BORLANDC__
-//# pragma comment(lib,"BugTrap.lib") // Link to ANSI DLL
-//#else
+#ifndef __BORLANDC__
+# pragma comment(lib,"BugTrap.lib") // Link to ANSI DLL
+#else
 # pragma comment(lib,"BugTrapB.lib") // Link to ANSI DLL
 #endif
 #endif // USE_BUG_TRAP

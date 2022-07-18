@@ -208,6 +208,7 @@
       <AdditionalLibraryDirectories>$(SolutionDir)3rd party\luajit-2\src\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <LargeAddressAware>true</LargeAddressAware>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <AdditionalDependencies>LuaJIT.lib;DxErr.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImportLibrary>$(xrLibDir)$(TargetName).lib</ImportLibrary>
     </Link>
   </ItemDefinitionGroup>
