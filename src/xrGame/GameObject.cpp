@@ -29,6 +29,8 @@
 #include "magic_box3.h"
 #include "animation_movement_controller.h"
 #include "../xrengine/xr_collide_form.h"
+#include "alife_simulator.h"
+#include "alife_object_registry.h"
 extern MagicBox3 MagicMinBox (int iQuantity, const Fvector* akPoint);
 
 #pragma warning(push)
@@ -41,7 +43,6 @@ extern MagicBox3 MagicMinBox (int iQuantity, const Fvector* akPoint);
 #	include "PHDebug.h"
 #endif
 
-ENGINE_API bool g_dedicated_server;
 
 CGameObject::CGameObject		()
 {
@@ -52,7 +53,7 @@ CGameObject::CGameObject		()
 	m_bCrPr_Activated			= false;
 	m_dwCrPr_ActivationStep		= 0;
 	m_spawn_time				= 0;
-	m_ai_location				= !g_dedicated_server ? xr_new<CAI_ObjectLocation>() : 0;
+	m_ai_location				= xr_new<CAI_ObjectLocation>();
 	m_server_flags.one			();
 
 	m_callbacks					= xr_new<CALLBACK_MAP>();
@@ -92,8 +93,7 @@ void CGameObject::Load(LPCSTR section)
 void CGameObject::reinit	()
 {
 	m_visual_callback.clear	();
-	if (!g_dedicated_server)
-        ai_location().reinit	();
+	ai_location().reinit	();
 
 	// clear callbacks	
 	for (CALLBACK_MAP_IT it = m_callbacks->begin(); it != m_callbacks->end(); ++it) it->second.clear();
@@ -338,12 +338,10 @@ BOOL CGameObject::net_Spawn		(CSE_Abstract*	DC)
 	}
 
 	reload						(*cNameSect());
-	if(!g_dedicated_server)
-		CScriptBinder::reload	(*cNameSect());
+	CScriptBinder::reload	(*cNameSect());
 	
 	reinit						();
-	if(!g_dedicated_server)
-		CScriptBinder::reinit	();
+	CScriptBinder::reinit	();
 #ifdef DEBUG
 	if(ph_dbg_draw_mask1.test(ph_m1_DbgTrackObject)&&stricmp(PH_DBG_ObjectTrackName(),*cName())==0)
 	{
@@ -845,8 +843,7 @@ void CGameObject::shedule_Update	(u32 dt)
 	// Msg							("-SUB-:[%x][%s] CGameObject::shedule_Update",smart_cast<void*>(this),*cName());
 	inherited::shedule_Update	(dt);
 	
-	if(!g_dedicated_server)
-		CScriptBinder::shedule_Update(dt);
+	CScriptBinder::shedule_Update(dt);
 }
 
 BOOL CGameObject::net_SaveRelevant	()
@@ -908,8 +905,7 @@ u32	CGameObject::ef_detector_type		() const
 void CGameObject::net_Relcase			(CObject* O)
 {
 	inherited::net_Relcase		(O);
-	if(!g_dedicated_server)
-		CScriptBinder::net_Relcase	(O);
+	CScriptBinder::net_Relcase	(O);
 }
 
 CGameObject::CScriptCallbackExVoid &CGameObject::callback(GameObject::ECallbackType type) const
@@ -1044,6 +1040,51 @@ void CGameObject::UpdateCL			()
 void CGameObject::on_matrix_change	(const Fmatrix &previous)
 {
 	obstacle().on_move				();
+}
+
+CSE_ALifeDynamicObject* CGameObject::alife_object() const
+{
+	const CALifeSimulator *sim = ai().get_alife();
+	if (sim)
+		return sim->objects().object(ID(), true);
+
+	return NULL;
+}
+
+void CGameObject::ChangePosition(const Fvector &pos)
+{
+	NET_Packet						PP;
+	CGameObject::u_EventGen			(PP, GE_CHANGE_POS, ID() );
+	PP.w_vec3						(pos);
+	CGameObject::u_EventSend		(PP);
+	// alpet: ÿâíîå ïåðåìåùåíèå âèçóàëîâ îáúåêòîâ
+	Fmatrix m = XFORM();
+	m.translate_over(pos);
+	UpdateXFORM(m);		
+
+	// alpet: ñîõðàíåíèå ïîçèöèè â ñåðâåðíûé ýêçåìïëÿð
+	CSE_ALifeDynamicObject* se_obj = alife_object();
+	if (se_obj)
+	{
+		se_obj->position() = pos;
+		se_obj->synchronize_location();
+	}
+
+}
+
+void CGameObject::UpdateXFORM(const Fmatrix &upd)
+{
+	XFORM() = upd;
+	IRenderVisual* pV = Visual();
+	IKinematics *pK = smart_cast<IKinematics*>(pV);
+	if (pK)
+	{
+		pV->getVisData().sphere.P = upd.c;
+		pK->CalculateBones_Invalidate();	 // ïîçâîëèò îáúåêòó áûñòðåå îáúÿâèòüñÿ â íîâîé òî÷êå			
+	}
+
+	// OnChangePosition processing
+	spatial_move();	
 }
 
 #ifdef DEBUG
