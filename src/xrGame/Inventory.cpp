@@ -693,25 +693,6 @@ void CInventory::ActiveWeapon( u16 slot )
 		return;
 	}
 	Activate(slot);
-	{
-		Activate(slot);
-		return;
-	}
-	if ( GetActiveSlot() == slot )
-	{
-		return;
-	}
-
-	Activate(slot);
-	if ( slot != NO_ACTIVE_SLOT && ItemFromSlot(slot) == NULL )
-	{
-		u16 prev_activ = GetActiveSlot();
-		m_iActiveSlot  = slot;
-		if ( !ActivateNextItemInActiveSlot() )
-		{
-			m_iActiveSlot = prev_activ;
-		}
-	}*/
 }
 
 void CInventory::Update() 
@@ -759,16 +740,10 @@ void CInventory::Update()
 				}
 			}
 			
-//			if ( m_iActiveSlot != GetNextActiveSlot() ) {
-//				LPCSTR const name = smart_cast<CGameObject const*>(m_pOwner)->cName().c_str();
-//				if ( !xr_strcmp("jup_b43_stalker_assistant_pri6695", name) )
-//					LogStackTrace	("");
-//				Msg					("[%6d][%s] CInventory::Activate changing active slot from %d to next active slot %d", Device.dwTimeGlobal, name, m_iActiveSlot, GetNextActiveSlot() );
-//			}
 			m_iActiveSlot			= GetNextActiveSlot();
 		}
 		else if((GetNextActiveSlot()!=NO_ACTIVE_SLOT) && ActiveItem() && ActiveItem()->cast_hud_item()->IsHidden())
-				ActiveItem()->ActivateItem();
+			ActiveItem()->ActivateItem();
 	}
 	UpdateDropTasks	();
 }
