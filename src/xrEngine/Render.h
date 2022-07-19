@@ -1,5 +1,4 @@
-﻿#ifndef _RENDER_H_
-#define _RENDER_H_
+﻿#pragma once
 
 #include "../xrCDB/frustum.h"
 #include "vis_common.h"
@@ -194,6 +193,7 @@ public:
     virtual GenerationLevel get_generation() = 0;
 
     virtual bool is_sun_static() = 0;
+    virtual bool is_simple_static() = 0;
     virtual DWORD get_dx_level() = 0;
 
     // Loading / Unloading
@@ -306,4 +306,4 @@ protected:
 
 //extern ENGINE_API IRender_interface* Render;
 
-#endif
+

@@ -41,6 +41,7 @@ CEffect_Rain::CEffect_Rain()
     state = stIdle;
 
     snd_Ambient.create("ambient\\rain", st_Effect, sg_Undefined);
+	rain_volume = 0.0f;
 
     // Moced to p_Render constructor
     /*
@@ -60,6 +61,7 @@ CEffect_Rain::CEffect_Rain()
 CEffect_Rain::~CEffect_Rain()
 {
     snd_Ambient.destroy();
+	rain_volume = 0.0f;
 
     // Cleanup
     p_destroy();
@@ -130,10 +132,6 @@ void CEffect_Rain::OnFrame()
     if (!g_pGameLevel) return;
 #endif
 
-#ifdef DEDICATED_SERVER
-    return;
-#endif
-
     // Parse states
     float factor = g_pGamePersistent->Environment().CurrentEnv->rain_density;
     static float hemi_factor = 0.f;
@@ -159,17 +157,25 @@ void CEffect_Rain::OnFrame()
     switch (state)
     {
     case stIdle:
-        if (factor < EPS_L) return;
-        state = stWorking;
-        snd_Ambient.play(0, sm_Looped);
-        snd_Ambient.set_position(Fvector().set(0, 0, 0));
-        snd_Ambient.set_range(source_offset, source_offset*2.f);
+		if (factor < EPS_L) {
+			if (snd_Ambient._feedback())
+				snd_Ambient.stop();
+			return;
+		}
+		if (snd_Ambient._feedback()) {
+			snd_Ambient.stop();
+			return;
+		}
+		snd_Ambient.play(0, sm_Looped);
+		snd_Ambient.set_position(Fvector().set(0, 0, 0));
+		snd_Ambient.set_range(source_offset, source_offset*2.f);
+		state = stWorking;
         break;
     case stWorking:
-        if (factor < EPS_L)
-        {
-            state = stIdle;
-            snd_Ambient.stop();
+		if (factor < EPS_L) {
+			snd_Ambient.stop();
+			state = stIdle;
+			rain_volume = 0.0f;
             return;
         }
         break;
@@ -181,8 +187,10 @@ void CEffect_Rain::OnFrame()
         // Fvector sndP;
         // sndP.mad (Device.vCameraPosition,Fvector().set(0,1,0),source_offset);
         // snd_Ambient.set_position(sndP);
-        snd_Ambient.set_volume(_max(0.1f, factor) * hemi_factor);
-    }
+		rain_volume = factor * hemi_factor;
+		clamp(rain_volume, .1f, 1.f);
+		snd_Ambient.set_volume(rain_volume);
+	}
 }
 
 //#include "xr_input.h"

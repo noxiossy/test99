@@ -1,5 +1,4 @@
-﻿#ifndef EnvironmentH
-#define EnvironmentH
+﻿#pragma once
 
 // refs
 class ENGINE_API IRender_Visual;
@@ -277,8 +276,10 @@ public:
     CEnvDescriptor* WFX_end_desc[2];
 
     EnvVec* CurrentWeather;
-    shared_str CurrentWeatherName;
-    shared_str CurrentCycleName;
+    shared_str				CurrentWeatherName;
+    shared_str				PrevWeatherName;
+	shared_str				CurrentCycleName;
+	u32 m_last_weather_shift;
 
     EnvsMap WeatherCycles;
     EnvsMap WeatherFXs;
@@ -323,8 +324,11 @@ public:
 
     void SetWeather(shared_str name, bool forced = false);
     shared_str GetWeather() { return CurrentWeatherName; }
+    shared_str				GetPrevWeather			()					{ return PrevWeatherName;}
+	void					SetWeatherNext( shared_str name );
     void ChangeGameTime(float game_time);
     void SetGameTime(float game_time, float time_factor);
+	u32						GetWeatherLastShift() { return m_last_weather_shift; }
 
     void OnDeviceCreate();
     void OnDeviceDestroy();
@@ -341,6 +345,8 @@ public:
 # ifdef INGAME_EDITOR
     float GetGameTime() { return fGameTime; }
 # endif // #ifdef INGAME_EDITOR
+	CEnvDescriptor* getCurrentWeather(size_t idx) const { return CurrentWeather->at(idx); };
+	void ForceReselectEnvs();
 
     bool m_paused;
 #endif // #ifdef _EDITOR
@@ -383,4 +389,3 @@ public:
 ENGINE_API extern Flags32 psEnvFlags;
 ENGINE_API extern float psVisDistance;
 
-#endif //EnvironmentH

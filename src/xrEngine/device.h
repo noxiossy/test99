@@ -252,15 +252,9 @@ public:
     void Initialize(void);
     void ShutDown(void);
 
-public:
-    void time_factor(const float& time_factor)
-    {
-        Timer.time_factor(time_factor);
-        TimerGlobal.time_factor(time_factor);
-    }
-
-    IC const float& time_factor() const
-    {
+    void time_factor(const float& time_factor); //--#SM+#--
+	
+	inline const float time_factor() const {
         VERIFY(Timer.time_factor() == TimerGlobal.time_factor());
         return (Timer.time_factor());
     }

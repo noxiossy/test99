@@ -97,6 +97,10 @@ public:
     bool get_dik_name(int dik, LPSTR dest, int dest_sz);
 
     void feedback(u16 s1, u16 s2, float time);
+	
+	// Возвращает символ по коду клавиши. Учитывается переключение языка, зажатый shift и caps lock
+	// В случае неудачи функция возвращает 0.
+	char DikToChar(int dik);
 };
 
 extern ENGINE_API CInput* pInput;

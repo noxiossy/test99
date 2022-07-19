@@ -15,6 +15,7 @@
 
 #include "x_ray.h"
 #include "render.h"
+#include "IGame_Persistent.h"
 
 // must be defined before include of FS_impl.h
 #define INCLUDE_FROM_ENGINE
@@ -26,11 +27,8 @@
 #endif // #ifdef INGAME_EDITOR
 
 #include "xrSash.h"
-#include "igame_persistent.h"
 
 #include "../build_config_defines.h"
-
-#pragma comment( lib, "d3dx9.lib" )
 
 ENGINE_API CRenderDevice Device;
 ENGINE_API CLoadScreenRenderer load_screen_renderer;
@@ -40,7 +38,7 @@ ENGINE_API BOOL g_bRendering = FALSE;
 u32 g_dwFPSlimit = 60;
 
 BOOL g_bLoaded = FALSE;
-ref_light precache_light = 0;
+//ref_light precache_light = 0;
 
 BOOL CRenderDevice::Begin()
 {
@@ -92,6 +90,8 @@ void CRenderDevice::End(void)
         ::Sound->set_master_volume(0.f);
         dwPrecacheFrame--;
 
+		if (!load_screen_renderer.b_registered)
+			m_pRender->ClearTarget();
         if (!dwPrecacheFrame)
         {
 
@@ -101,11 +101,11 @@ void CRenderDevice::End(void)
 
             m_pRender->updateGamma();
 
-            if (precache_light) 
+            /*if (precache_light) 
 			{
 				precache_light->set_active(false);
 				precache_light.destroy();
-			}
+			}*/
             ::Sound->set_master_volume(1.f);
 
             m_pRender->ResourcesDestroyNecessaryTextures();
@@ -131,8 +131,8 @@ void CRenderDevice::End(void)
     g_bRendering = FALSE;
     // end scene
     // Present goes here, so call OA Frame end.
-    if (g_SASH.IsBenchmarkRunning())
-        g_SASH.DisplayFrame(Device.fTimeGlobal);
+    //if (g_SASH.IsBenchmarkRunning())
+    //    g_SASH.DisplayFrame(Device.fTimeGlobal);
     m_pRender->End();
 
 # ifdef INGAME_EDITOR
@@ -151,7 +151,7 @@ void CRenderDevice::PreCache(u32 amount, bool b_draw_loadscreen, bool b_wait_use
 		amount = 0;
 
     dwPrecacheFrame = dwPrecacheTotal = amount;
-    if (amount && !precache_light && g_pGameLevel && g_loading_events.empty())
+    /*if (amount && !precache_light && g_pGameLevel && g_loading_events.empty())
     {
         precache_light = ::Render->light_create();
         precache_light->set_shadow(false);
@@ -159,7 +159,7 @@ void CRenderDevice::PreCache(u32 amount, bool b_draw_loadscreen, bool b_wait_use
         precache_light->set_color(255, 255, 255);
         precache_light->set_range(5.0f);
         precache_light->set_active(true);
-    }
+    }*/
 
     if (amount && b_draw_loadscreen && !load_screen_renderer.b_registered)
     {
@@ -167,11 +167,7 @@ void CRenderDevice::PreCache(u32 amount, bool b_draw_loadscreen, bool b_wait_use
     }
 }
 
-int g_svDedicateServerUpdateReate = 100;
-
 ENGINE_API xr_list<LOADING_EVENT> g_loading_events;
-
-extern bool IsMainMenuActive(); //ECO_RENDER add
 
 void CRenderDevice::on_idle()
 {
@@ -405,7 +401,6 @@ void CRenderDevice::FrameMove()
 	Statistic->EngineTOTAL.End();
 }
 ENGINE_API BOOL bShowPauseString = TRUE;
-#include "IGame_Persistent.h"
 
 void CRenderDevice::Pause(BOOL bOn, BOOL bTimer, BOOL bSound, LPCSTR reason)
 {
@@ -545,4 +540,11 @@ void CLoadScreenRenderer::stop()
 void CLoadScreenRenderer::OnRender()
 {
     pApp->load_draw_internal();
+}
+
+void CRenderDevice::time_factor(const float& time_factor)
+{
+    Timer.time_factor(time_factor);
+    TimerGlobal.time_factor(time_factor);
+    psSoundTimeFactor = time_factor; //--#SM+#--
 }

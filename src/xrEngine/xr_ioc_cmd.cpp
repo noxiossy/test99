@@ -17,8 +17,16 @@
 
 xr_token* vid_quality_token = NULL;
 
-xr_token vid_bpp_token[] =
-{
+xr_token FpsLockToken[] = {
+	{ "nofpslock",  0 },
+	{ "fpslock60",  60 },
+	{ "fpslock120", 120 },
+	{ "fpslock144", 144 },
+	{ "fpslock240", 240 },
+	{ nullptr, 0 }
+};
+
+xr_token							vid_bpp_token							[ ]={
     {"16", 16},
     {"32", 32},
     {0, 0}
@@ -545,6 +553,7 @@ virtual void Save (IWriter *F) {};
 */
 
 ENGINE_API BOOL r2_sun_static = TRUE;
+ENGINE_API BOOL r2_simple_static = TRUE;
 ENGINE_API BOOL r2_advanced_pp = FALSE; // advanced post process and effects
 
 u32 renderer_value = 2;
@@ -567,14 +576,15 @@ public:
         tokens = vid_quality_token;
 
         inherited::Execute(args);
-        // 0 - r1
-        // 1..3 - r2
-        // 4 - r3
-        psDeviceFlags.set(rsR2, ((renderer_value > 0) && renderer_value < 4));
-        psDeviceFlags.set(rsR3, (renderer_value == 4));
-        psDeviceFlags.set(rsR4, (renderer_value >= 5));
+		//	0 - r1_plus
+		//	1..3 - r2
+		//	4 - r3
+		psDeviceFlags.set		(rsR2, (renderer_value<4) );
+		//psDeviceFlags.set		(rsR3, (renderer_value==4) );
+		//psDeviceFlags.set		(rsR4, (renderer_value>=5) );
 
-        r2_sun_static = (renderer_value < 2);
+		r2_simple_static= (renderer_value<1);
+		r2_sun_static	= (renderer_value<2);
 
         r2_advanced_pp = (renderer_value >= 3);
     }
@@ -595,7 +605,8 @@ public:
     }
 
 };
-#ifndef DEDICATED_SERVER
+
+
 class CCC_soundDevice : public CCC_Token
 {
     typedef CCC_Token inherited;
@@ -631,7 +642,7 @@ public:
         inherited::Save(F);
     }
 };
-#endif
+
 //-----------------------------------------------------------------------
 class CCC_ExclusiveMode : public IConsole_Command
 {
@@ -698,18 +709,11 @@ ENGINE_API float	psHUD_FOV=psHUD_FOV_def;
 //extern int psSkeletonUpdate;
 extern int rsDVB_Size;
 extern int rsDIB_Size;
-extern int psNET_ClientUpdate;
-extern int psNET_ClientPending;
-extern int psNET_ServerUpdate;
-extern int psNET_ServerPending;
-extern int psNET_DedicatedSleep;
-extern char psNET_Name[32];
-extern Flags32 psEnvFlags;
 //extern float r__dtex_range;
 
 extern int g_ErrorLineCount;
 
-ENGINE_API int ps_r__Supersample = 1;
+//ENGINE_API int ps_r__Supersample = 1;
 void CCC_Register()
 {
     // General
@@ -757,8 +761,9 @@ void CCC_Register()
 #endif
 
     // Render device states
-    CMD4(CCC_Integer, "r__supersample", &ps_r__Supersample, 1, 4);
+    //CMD4(CCC_Integer, "r__supersample", &ps_r__Supersample, 1, 4);
 
+	CMD3(CCC_Token, 	"r_fps_lock", 			&g_dwFPSlimit, FpsLockToken);
 
     CMD3(CCC_Mask, "rs_v_sync", &psDeviceFlags, rsVSync);
     // CMD3(CCC_Mask, "rs_disable_objects_as_crows",&psDeviceFlags, rsDisableObjectsAsCrows );
@@ -782,7 +787,6 @@ void CCC_Register()
 
     // Texture manager
     CMD4(CCC_Integer, "texture_lod", &psTextureLOD, 0, 4);
-    CMD4(CCC_Integer, "net_dedicated_sleep", &psNET_DedicatedSleep, 0, 64);
 
     // General video control
     CMD1(CCC_VidMode, "vid_mode");
@@ -824,29 +828,16 @@ void CCC_Register()
 
     CMD1(CCC_r2, "renderer");
 
-#ifndef DEDICATED_SERVER
     CMD1(CCC_soundDevice, "snd_device");
-#endif
     //psSoundRolloff = pSettings->r_float ("sound","rolloff"); clamp(psSoundRolloff, EPS_S, 2.f);
     psSoundOcclusionScale = pSettings->r_float("sound", "occlusion_scale");
     clamp(psSoundOcclusionScale, 0.1f, .5f);
-
-    extern int g_Dump_Export_Obj;
-    extern int g_Dump_Import_Obj;
-    CMD4(CCC_Integer, "net_dbg_dump_export_obj", &g_Dump_Export_Obj, 0, 1);
-    CMD4(CCC_Integer, "net_dbg_dump_import_obj", &g_Dump_Import_Obj, 0, 1);
 
 #ifdef DEBUG
     CMD1(CCC_DumpOpenFiles, "dump_open_files");
 #endif
 
     CMD1(CCC_ExclusiveMode, "input_exclusive_mode");
-
-    extern int g_svTextConsoleUpdateRate;
-    CMD4(CCC_Integer, "sv_console_update_rate", &g_svTextConsoleUpdateRate, 1, 100);
-
-    extern int g_svDedicateServerUpdateReate;
-    CMD4(CCC_Integer, "sv_dedicated_server_update_rate", &g_svDedicateServerUpdateReate, 1, 1000);
 
     CMD1(CCC_HideConsole, "hide");
 

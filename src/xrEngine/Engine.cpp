@@ -5,7 +5,6 @@
 #include "stdafx.h"
 #include "../xrCore/cpuid.h"
 #include "Engine.h"
-#include "dedicated_server_only.h"
 
 CEngine Engine;
 
