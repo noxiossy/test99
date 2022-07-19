@@ -1115,7 +1115,6 @@ void CLevel::OnAlifeSimulatorLoaded()
 
 void CLevel::OnSessionTerminate(LPCSTR reason)
 {
-    MainMenu()->OnSessionTerminate(reason);
 }
 
 u32	GameID()

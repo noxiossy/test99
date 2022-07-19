@@ -13,14 +13,7 @@ void CMosquitoBald::script_register	(lua_State *L)
 		class_<CTorridZone,CGameObject>("CTorridZone")
 			.def(constructor<>()),
 		class_<CMosquitoBald,CGameObject>("CMosquitoBald")
-			.def(constructor<>())
-	];
-}
-
-void CZoneCampfire::script_register(lua_State* L)
-{
-	module(L)
-		[
+			.def(constructor<>()),
 		class_<CZoneCampfire,CGameObject>("CZoneCampfire")
 			.def(constructor<>())
 			.def("turn_on",				&CZoneCampfire::turn_on_script)

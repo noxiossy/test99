@@ -9,11 +9,9 @@
 #ifndef DEBUG_MAKE_FINAL_HPP_INCLUDED
 #define DEBUG_MAKE_FINAL_HPP_INCLUDED
 
-#include <boost/noncopyable.hpp>
-
 namespace debug {
 
-#ifdef DEBUG
+#if 0 //def DEBUG
 	namespace detail {
 
 		template <typename T1, typename T2>

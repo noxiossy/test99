@@ -24,9 +24,6 @@
 #include "level.h"
 #include "script_callback_ex.h"
 #include "../xrphysics/MathUtils.h"
-#include "game_cl_base_weapon_usage_statistic.h"
-#include "game_cl_mp.h"
-#include "reward_event_generator.h"
 #include "game_level_cross_table.h"
 #include "ai_obstacle.h"
 #include "magic_box3.h"
@@ -207,8 +204,6 @@ void CGameObject::OnEvent		(NET_Packet& P, u16 type)
 			{
 			case GE_HIT_STATISTIC:
 				{
-					if (GameID() != eGameIDSingle)
-						Game().m_WeaponUsageStatistic->OnBullet_Check_Request(&HDS);
 				}break;
 			default:
 				{
@@ -217,13 +212,6 @@ void CGameObject::OnEvent		(NET_Packet& P, u16 type)
 			SetHitInfo(Hitter, Weapon, HDS.bone(), HDS.p_in_bone_space, HDS.dir);
 			Hit				(&HDS);
 			//---------------------------------------------------------------------------
-			if (GameID() != eGameIDSingle)
-			{
-				Game().m_WeaponUsageStatistic->OnBullet_Check_Result(false);
-				game_cl_mp*	mp_game = smart_cast<game_cl_mp*>(&Game());
-				if (mp_game->get_reward_generator())
-					mp_game->get_reward_generator()->OnBullet_Hit(Hitter, this, Weapon, HDS.boneID);
-			}
 			//---------------------------------------------------------------------------
 		}
 		break;
@@ -387,6 +375,15 @@ BOOL CGameObject::net_Spawn		(CSE_Abstract*	DC)
 
 			if (l_tpALifeObject && ai().game_graph().valid_vertex_id(l_tpALifeObject->m_tGraphID))
 				ai_location().game_vertex		(l_tpALifeObject->m_tGraphID);
+
+			if ( !_valid( Position() ) ) {
+			  Fvector vertex_pos = ai().level_graph().vertex_position( ai_location().level_vertex_id() );
+			  Msg( "! [%s]: %s has invalid Position[%f,%f,%f] level_vertex_id[%u][%f,%f,%f]", __FUNCTION__, cName().c_str(), Position().x, Position().y, Position().z, ai_location().level_vertex_id(), vertex_pos.x, vertex_pos.y, vertex_pos.z  );
+			  Position().set( vertex_pos );
+			  auto se_obj = alife_object();
+			  if ( se_obj )
+			    se_obj->o_Position.set( Position() );
+			}
 
 			validate_ai_locations				(false);
 

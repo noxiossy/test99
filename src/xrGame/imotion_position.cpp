@@ -7,7 +7,6 @@
 #include "../xrphysics/extendedgeom.h"
 
 #include "../Include/xrRender/Kinematics.h"
-#include <boost/noncopyable.hpp>
 ///////////////////////////////////////////////////////////////////////////////////////
 #include "physicsshellholder.h"
 
@@ -128,13 +127,15 @@ void imotion_position::state_start( )
 	KA->SetUpdateTracksCalback( &update_callback );
 	update_callback.motion = this;
 	struct get_controled_blend: 
-		public IterateBlendsCallback,
-		private boost::noncopyable
-		
+		public IterateBlendsCallback		
 	{
 		CBlend					*blend;
 		const	PlayCallback	cb;
 		get_controled_blend(const	PlayCallback	_cb):blend( 0 ),cb(_cb){}
+		//non copyable
+		get_controled_blend(const get_controled_blend&) = delete;
+		get_controled_blend& operator=(const get_controled_blend&) = delete;
+
 		virtual	void	operator () ( CBlend &B )
 		{
 			if( cb == B.Callback && B.bone_or_part == 0 )
@@ -469,10 +470,14 @@ public:
 static void save_blends( buffer_vector<sblend_save>& buffer, IKinematicsAnimated& KA )
 {
 	buffer.clear();
-	struct scbl: public IterateBlendsCallback, private boost::noncopyable
+	struct scbl: public IterateBlendsCallback
 	{
 		buffer_vector<sblend_save>& _buffer;
 		scbl( buffer_vector<sblend_save>& bf ): _buffer( bf ){}
+		//non copyable
+		scbl(const scbl&) = delete;
+		scbl& operator=(const scbl&) = delete;
+
 		virtual	void	operator () ( CBlend &B ) 
 		{
 			sblend_save s;
