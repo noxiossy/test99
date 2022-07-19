@@ -1,12 +1,12 @@
-﻿#ifndef xrRender_consoleH
-#define xrRender_consoleH
-#pragma once
+﻿#pragma once
 
 // Common
 //Alundaio
 extern ECORE_API	BOOL 		ps_clear_models_on_unload;
 extern ECORE_API    BOOL		ps_use_precompiled_shaders;
 //-Alundaio
+extern ECORE_API u32 ps_r_pp_aa_mode;
+extern ECORE_API	xr_token	pp_aa_mode_token[];
 
 extern ECORE_API	u32			ps_r_sun_shafts;	//=	0;
 extern ECORE_API	xr_token	qsun_shafts_token[];
@@ -29,7 +29,7 @@ extern ECORE_API	xr_token	qmsaa__atest_token[];
 extern ECORE_API	u32			ps_r3_minmax_sm;//	=	0;
 extern ECORE_API	xr_token	qminmax_sm_token[];
 
-extern ENGINE_API	int			ps_r__Supersample;
+//extern ENGINE_API	int			ps_r__Supersample;
 extern ECORE_API	int			ps_r__LightSleepFrames;
 
 extern ECORE_API	float		ps_r__Detail_l_ambient;
@@ -217,8 +217,13 @@ RFLAG_ACTOR_SHADOW = (1<<0),
 };
 //-Swartz
 
+// Postprocess anti-aliasing types
+enum
+{
+	NO_AA,
+	SMAA,
+};
+
 extern void						xrRender_initconsole	();
 extern BOOL						xrRender_test_hw		();
 extern void						xrRender_apply_tf		();
-
-#endif

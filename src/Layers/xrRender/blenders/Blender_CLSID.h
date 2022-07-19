@@ -1,6 +1,4 @@
-﻿#ifndef BLENDER_CLSID_H
-#define BLENDER_CLSID_H
-#pragma once
+﻿#pragma once
 
 // Main blenders for level
 #define		B_DEFAULT		MK_CLSID('L','M',' ',' ',' ',' ',' ',' ')
@@ -33,4 +31,3 @@
 // Editor
 #define		B_EDITOR_WIRE	MK_CLSID('E','_','W','I','R','E',' ',' ')
 #define		B_EDITOR_SEL	MK_CLSID('E','_','S','E','L',' ',' ',' ')
-#endif

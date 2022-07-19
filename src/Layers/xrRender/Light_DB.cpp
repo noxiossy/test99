@@ -3,7 +3,7 @@
 #include "../../xrEngine/xrLevel.h"
 #include "../../xrEngine/igame_persistent.h"
 #include "../../xrEngine/environment.h"
-#include "../../utils/xrLC_Light/R_light.h"
+#include "R_light.h"
 #include "light_db.h"
 
 CLight_DB::CLight_DB()
@@ -35,12 +35,10 @@ void CLight_DB::Load			(IReader *fs)
 			light*		L				= Create	();
 			L->flags.bStatic			= true;
 			L->set_type					(IRender_Light::POINT);
-
-#if RENDER==R_R1
-			L->set_shadow				(false);
-#else
-			L->set_shadow				(true);
-#endif
+			if (::Render->is_simple_static() )
+				L->set_shadow				(false);
+			else
+				L->set_shadow				(true);
 			u32 controller				= 0;
 			F->r						(&controller,4);
 			F->r						(&Ldata,sizeof(Flight));

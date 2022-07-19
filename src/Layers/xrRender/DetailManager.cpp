@@ -392,7 +392,7 @@ void CDetailManager::Render	()
 	if (!RImplementation.Details) return;	// possibly deleted
 	if (!dtFS) return;
 	if (!psDeviceFlags.is(rsDetails)) return;
-	if (g_pGamePersistent && g_pGamePersistent->m_pMainMenu && g_pGamePersistent->m_pMainMenu->IsActive()) return;
+//	if (g_pGamePersistent && g_pGamePersistent->m_pMainMenu && g_pGamePersistent->m_pMainMenu->IsActive()) return;
 #endif
 
 	// MT
@@ -424,12 +424,11 @@ void __stdcall	CDetailManager::MT_CALC		()
 	if (!RImplementation.Details) return;	// possibly deleted
 	if (!dtFS) return;
 	if (!psDeviceFlags.is(rsDetails)) return;
-	if (g_pGamePersistent && g_pGamePersistent->m_pMainMenu && g_pGamePersistent->m_pMainMenu->IsActive()) return;
+//	if (g_pGamePersistent && g_pGamePersistent->m_pMainMenu && g_pGamePersistent->m_pMainMenu->IsActive()) return;
 #endif    
 
 	MT.Enter					();
-	if (m_frame_calc!=RDEVICE.dwFrame)	
-		if ((m_frame_rendered+1)==RDEVICE.dwFrame) //already rendered
+		if (m_frame_calc != RDEVICE.dwFrame && (m_frame_rendered + 1) == RDEVICE.dwFrame)
 		{
 			Fvector		EYE				= RDEVICE.vCameraPosition_saved;
 
