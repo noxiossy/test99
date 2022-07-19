@@ -9,8 +9,6 @@
 #include "igame_level.h"
 #include "igame_persistent.h"
 
-#include "dedicated_server_only.h"
-#include "no_single.h"
 #include "../xrNetServer/NET_AuthCheck.h"
 
 #include "xr_input.h"
@@ -62,71 +60,11 @@ static int start_year = 1999; // 1999
 
 // binary hash, mainly for copy-protection
 
-#ifndef DEDICATED_SERVER
-
-#include "../xrGameSpy/gamespy/md5c.c"
 #include <ctype.h>
 
 #include <thread>
 #define DEFAULT_MODULE_HASH "3CAABCFCFF6F3A810019C6A72180F166"
 static char szEngineHash[33] = DEFAULT_MODULE_HASH;
-
-PROTECT_API char* ComputeModuleHash(char* pszHash)
-{
-    //SECUROM_MARKER_HIGH_SECURITY_ON(3)
-
-    char szModuleFileName[MAX_PATH];
-    HANDLE hModuleHandle = NULL, hFileMapping = NULL;
-    LPVOID lpvMapping = NULL;
-    MEMORY_BASIC_INFORMATION MemoryBasicInformation;
-
-    if (!GetModuleFileName(NULL, szModuleFileName, MAX_PATH))
-        return pszHash;
-
-    hModuleHandle = CreateFile(szModuleFileName, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
-
-    if (hModuleHandle == INVALID_HANDLE_VALUE)
-        return pszHash;
-
-    hFileMapping = CreateFileMapping(hModuleHandle, NULL, PAGE_READONLY, 0, 0, NULL);
-
-    if (hFileMapping == NULL)
-    {
-        CloseHandle(hModuleHandle);
-        return pszHash;
-    }
-
-    lpvMapping = MapViewOfFile(hFileMapping, FILE_MAP_READ, 0, 0, 0);
-
-    if (lpvMapping == NULL)
-    {
-        CloseHandle(hFileMapping);
-        CloseHandle(hModuleHandle);
-        return pszHash;
-    }
-
-    ZeroMemory(&MemoryBasicInformation, sizeof(MEMORY_BASIC_INFORMATION));
-
-    VirtualQuery(lpvMapping, &MemoryBasicInformation, sizeof(MEMORY_BASIC_INFORMATION));
-
-    if (MemoryBasicInformation.RegionSize)
-    {
-        char szHash[33];
-        MD5Digest((unsigned char*)lpvMapping, (unsigned int)MemoryBasicInformation.RegionSize, szHash);
-        MD5Digest((unsigned char*)szHash, 32, pszHash);
-        for (int i = 0; i < 32; ++i)
-            pszHash[i] = (char)toupper(pszHash[i]);
-    }
-
-    UnmapViewOfFile(lpvMapping);
-    CloseHandle(hFileMapping);
-    CloseHandle(hModuleHandle);
-
-    //SECUROM_MARKER_HIGH_SECURITY_OFF(3)
-
-    return pszHash;
-}
-#endif // DEDICATED_SERVER
 
 void compute_build_id()
 {
@@ -191,7 +129,7 @@ ENGINE_API string_path g_sLaunchWorkingFolder;
 void InitEngine()
 {
     Engine.Initialize();
-    while (!g_bIntroFinished) Sleep(100);
+	//while (!g_bIntroFinished)	Sleep	(100);
     Device.Initialize();
 }
 
@@ -213,10 +151,6 @@ struct path_excluder_predicate
 
 void InitSettings	()
 {
-#ifndef DEDICATED_SERVER
-    Msg("EH: %s\n", ComputeModuleHash(szEngineHash));
-#endif // DEDICATED_SERVER
-
     string_path fname;
     FS.update_path(fname, "$game_config$", "system.ltx");
 #ifdef DEBUG
@@ -247,18 +181,7 @@ void InitSettings	()
 }
 void InitConsole	()
 {
-    ////SECUROM_MARKER_SECURITY_ON(5)
-
-#ifdef DEDICATED_SERVER
-    {
-        Console = xr_new<CTextConsole>();
-    }
-#else
-    // else
-    {
-        Console = xr_new<CConsole>();
-    }
-#endif
+    Console = xr_new<CConsole>();
     Console->Initialize();
 
     xr_strcpy(Console->ConfigFile, "user.ltx");
@@ -625,20 +548,12 @@ void foo()
 
 ENGINE_API bool g_dedicated_server = false;
 
-#ifndef DEDICATED_SERVER
-
-#endif // DEDICATED_SERVER
-
 int APIENTRY WinMain_impl(HINSTANCE hInstance,
                           HINSTANCE hPrevInstance,
                           char* lpCmdLine,
                           int nCmdShow)
 {
-#ifdef DEDICATED_SERVER
-    Debug._initialize(true);
-#else // DEDICATED_SERVER
-    Debug._initialize(false);
-#endif // DEDICATED_SERVER
+	Debug._initialize			(false);
 
     if (!IsDebuggerPresent())
     {
@@ -666,11 +581,6 @@ int APIENTRY WinMain_impl(HINSTANCE hInstance,
     }
 
     // foo();
-#ifndef DEDICATED_SERVER
-
-    // Check for virtual memory
-    //if ((strstr(lpCmdLine, "--skipmemcheck") == NULL) && IsOutOfVirtualMemory())
-     //   return 0;
 
     // Check for another instance
 #ifdef NO_MULTI_INSTANCES
@@ -693,9 +603,6 @@ int APIENTRY WinMain_impl(HINSTANCE hInstance,
         return 1;
     }
 #endif
-#else // DEDICATED_SERVER
-    g_dedicated_server = true;
-#endif // DEDICATED_SERVER
 
     //SetThreadAffinityMask(GetCurrentThread(), 1);
 
@@ -751,11 +658,9 @@ int APIENTRY WinMain_impl(HINSTANCE hInstance,
         xr_strcpy(Core.CompName, sizeof(Core.CompName), "Computer");
     }
 
-#ifndef DEDICATED_SERVER
     {
         damn_keys_filter filter;
         (void)filter;
-#endif // DEDICATED_SERVER
 
         FPU::m24r();
         InitEngine();
@@ -796,7 +701,6 @@ int APIENTRY WinMain_impl(HINSTANCE hInstance,
                 return 0;
         };
 
-#ifndef DEDICATED_SERVER
         if (strstr(Core.Params, "-r2a"))
             Console->Execute("renderer renderer_r2a");
         else if (strstr(Core.Params, "-r2"))
@@ -807,9 +711,7 @@ int APIENTRY WinMain_impl(HINSTANCE hInstance,
             pTmp->Execute(Console->ConfigFile);
             xr_delete(pTmp);
         }
-#else
-        Console->Execute("renderer renderer_r1");
-#endif
+
         //. InitInput ( );
         Engine.External.Initialize();
         Console->Execute("stat_memory");
@@ -832,14 +734,12 @@ int APIENTRY WinMain_impl(HINSTANCE hInstance,
                           temp_wf, &si, &pi);
 
         }
-#ifndef DEDICATED_SERVER
 #ifdef NO_MULTI_INSTANCES
         // Delete application presence mutex
         CloseHandle(hCheckPresenceMutex);
 #endif
     }
     // here damn_keys_filter class instanse will be destroyed
-#endif // DEDICATED_SERVER
 
     return 0;
 }
@@ -1120,11 +1020,10 @@ void CApplication::LoadBegin()
         g_bootComplete = FALSE;
         //-AVO
 
-#ifndef DEDICATED_SERVER
         _InitializeFont(pFontSystem, "ui_font_letterica18_russian", 0);
 
         m_pRender->LoadBegin();
-#endif
+
 		if (Core.ParamFlags.test(Core.verboselog))
 			phase_timer.Start();
         load_stage = 0;
@@ -1171,10 +1070,7 @@ void CApplication::LoadDraw		()
 
     if (!Device.Begin()) return;
 
-    if (g_dedicated_server)
-        Console->OnRender();
-    else
-        load_draw_internal();
+	load_draw_internal			();
 
     Device.End();
 }
