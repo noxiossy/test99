@@ -655,6 +655,7 @@ LPCSTR DelHyphens( LPCSTR c )
 	return buf;
 }
 
+extern	void	GetCDKey_FromRegistry(char* CDKeyStr);
 //extern	int VerifyClientCheck(const char *key, unsigned short cskey);
 
 bool CMainMenu::IsCDKeyIsValid()
@@ -736,13 +737,4 @@ void CMainMenu::OnDownloadMPMap(CUIWindow* w, void* d)
 	LPCSTR params = NULL;
 	STRCONCAT(params, "/C start ", url);
 	ShellExecute(0, "open", "cmd.exe", params, NULL, SW_SHOW);
-}
-
-demo_info const * CMainMenu::GetDemoInfo(LPCSTR file_name)
-{
-	if (!m_demo_info_loader)
-	{
-		m_demo_info_loader = xr_new<demo_info_loader>();
-	}
-	return m_demo_info_loader->get_demofile_info(file_name);
 }
