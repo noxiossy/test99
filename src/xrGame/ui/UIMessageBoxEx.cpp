@@ -108,6 +108,14 @@ bool CUIMessageBoxEx::OnKeyboardAction(int dik, EUIMessages keyboard_action)
 			return true;
 */
 		}else
+			if ( dik == DIK_ESCAPE )
+		{
+			CUIMessageBox::E_MESSAGEBOX_STYLE style = m_pMessageBox->GetBoxStyle();
+			if(style != CUIMessageBox::MESSAGEBOX_INFO)
+				HideDialog();
+			return true;
+
+		}else
 			return CUIDialogWnd::OnKeyboardAction(dik, keyboard_action);
 	}
 	return CUIDialogWnd::OnKeyboardAction(dik, keyboard_action);

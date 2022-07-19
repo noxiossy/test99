@@ -62,7 +62,7 @@ void CUIMotionIcon::Init(Frect const& zonemap_rect)
 
 void CUIMotionIcon::SetNoise(float Pos)
 {
-	if(!IsGameTypeSingle())
+	if (!IsShown())
 		return;
 
 	Pos	= clampr(Pos, 0.f, 100.f);
@@ -71,7 +71,7 @@ void CUIMotionIcon::SetNoise(float Pos)
 
 void CUIMotionIcon::SetLuminosity(float Pos)
 {
-	if(!IsGameTypeSingle())
+	if (!IsShown())
 		return;
 
 	m_luminosity	= Pos;
@@ -79,16 +79,16 @@ void CUIMotionIcon::SetLuminosity(float Pos)
 
 void CUIMotionIcon::Draw()
 {
+	if (!IsShown())
+		return;
 	inherited::Draw();
 }
 
 void CUIMotionIcon::Update()
 {
-	if(!IsGameTypeSingle())
-	{
-		inherited::Update();
+	if (!IsShown())
 		return;
-	}
+
 	if(m_bchanged){
 		m_bchanged = false;
 		if( m_npc_visibility.size() )
@@ -116,15 +116,15 @@ void CUIMotionIcon::Update()
 
 void SetActorVisibility		(u16 who_id, float value)
 {
-	if(!IsGameTypeSingle())
-		return;
-
-	if(g_pMotionIcon)
+	if (g_pMotionIcon && g_pMotionIcon->IsShown())
 		g_pMotionIcon->SetActorVisibility(who_id, value);
 }
 
 void CUIMotionIcon::SetActorVisibility		(u16 who_id, float value)
 {
+	if (!IsShown())
+		return;
+
 	clamp(value, 0.f, 1.f);
 	value		*= 100.f;
 

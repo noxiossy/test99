@@ -11,25 +11,14 @@
 #include <dinput.h>
 #include "ui\UIBtnHint.h"
 #include "UICursor.h"
-#include "gamespy/CdkeyDecode/cdkeydecode.h"
 #include "string_table.h"
 #include "../xrCore/os_clipboard.h"
-
-#include "DemoInfo.h"
-#include "DemoInfo_Loader.h"
-
-#include "ui/UICDkey.h"
 
 #include <shellapi.h>
 #pragma comment(lib, "shell32.lib")
 
-#include "object_broker.h"
 
-#include "account_manager.h"
-#include "login_manager.h"
-#include "profile_store.h"
-#include "stats_submitter.h"
-#include "atlas_submit_queue.h"
+#include "object_broker.h"
 
 //#define DEMO_BUILD
 
@@ -86,7 +75,6 @@ CMainMenu::CMainMenu	()
 
 	GetPlayerName					();
 	GetCDKeyFromRegistry			();
-	m_demo_info_loader				= NULL;
 
 	{
 		g_btnHint						= xr_new<CUIButtonHint>();
@@ -117,7 +105,6 @@ CMainMenu::~CMainMenu	()
 	xr_delete						(m_startDialog);
 	g_pGamePersistent->m_pMainMenu	= NULL;
 	
-	xr_delete						(m_demo_info_loader);
 	delete_data						(m_pMB_ErrDlgs);	
 }
 
@@ -613,7 +600,6 @@ void	CMainMenu::OnRunDownloadedPatch			(CUIWindow*, void*)
 
 void CMainMenu::CancelDownload()
 {
-	m_sPDProgress.IsInProgress	= false;
 }
 
 void CMainMenu::SetNeedVidRestart()
