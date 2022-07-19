@@ -676,9 +676,11 @@
     <Text Include="todo.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="$(SolutionDir)xrCPU_Pipe\xrCPU_Pipe.vcxproj">
-      <Project>{ca0649dd-d089-423a-981c-46b57a884eb9}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    <ProjectReference Include="$(SolutionDir)3rd party\luabind\luabind.vcxproj">
+      <Project>{cc52e0b3-cc35-4934-9302-035b748f3f2c}</Project>
+    </ProjectReference>
+    <ProjectReference Include="$(SolutionDir)3rd party\luajit-2\src\luajit.vcxproj">
+      <Project>{632AEEB6-DC06-4E15-9551-B2B09A4B73C5}</Project>
     </ProjectReference>
     <ProjectReference Include="$(SolutionDir)xrEngine\xrEngine.vcxproj">
       <Project>{2578c6d8-660d-48ae-9322-7422f8664f06}</Project>
