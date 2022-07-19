@@ -15,8 +15,6 @@
 #include "debug_renderer.h"
 #include "xrGameSpyServer.h"
 
-ENGINE_API	bool g_dedicated_server;
-
 #define			MAPROT_LIST_NAME		"maprot_list.ltx"
 string_path		MAPROT_LIST		= "";
 BOOL	net_sv_control_hit	= FALSE		;
@@ -438,7 +436,6 @@ void game_sv_GameState::Create					(shared_str &options)
 		FS.r_close	(F);
 	}
 
-	if (!g_dedicated_server)
 	{
 		// loading scripts
 		ai().script_engine().remove_script_process(ScriptEngine::eScriptProcessorGame);
@@ -645,12 +642,6 @@ void game_sv_GameState::Update		()
 	ping_filler tmp_functor;
 	m_server->ForEachClientDo(tmp_functor);
 	
-	if (!IsGameTypeSingle() && (Phase() == GAME_PHASE_INPROGRESS))
-	{
-		m_item_respawner.update(Level().timeServer());
-	}
-	
-	if (!g_dedicated_server)
 	{
 		if (Level().game) {
 			CScriptProcess				*script_process = ai().script_engine().script_process(ScriptEngine::eScriptProcessorGame);
@@ -681,8 +672,7 @@ game_sv_GameState::game_sv_GameState()
 
 game_sv_GameState::~game_sv_GameState()
 {
-	if (!g_dedicated_server)
-		ai().script_engine().remove_script_process(ScriptEngine::eScriptProcessorGame);
+	ai().script_engine().remove_script_process(ScriptEngine::eScriptProcessorGame);
 	xr_delete(m_event_queue);
 
 	SaveMapList();
@@ -760,14 +750,8 @@ void game_sv_GameState::OnEvent (NET_Packet &tNetPacket, u16 type, u32 time, Cli
 			u16     id_src				= tNetPacket.r_u16();
 			CSE_Abstract*	e_src		= get_entity_from_eid	(id_src	);
 
-			if(!e_src)  // && !IsGameTypeSingle() added by andy because of Phantom does not have server entity
-			{
-				if( IsGameTypeSingle() ) break;
-
-				game_PlayerState* ps	= get_eid(id_src);
-				if (!ps)				break;
-				id_src					= ps->GameID;
-			}
+			if(!e_src)
+				break;
 
 			OnHit(id_src, id_dest, tNetPacket);
 			m_server->SendBroadcast		(BroadcastCID,tNetPacket,net_flags(TRUE,TRUE));
@@ -798,13 +782,10 @@ void game_sv_GameState::OnEvent (NET_Packet &tNetPacket, u16 type, u32 time, Cli
 			CL->ps->m_online_time	= Level().timeServer();
 			CL->ps->DeathTime		= Device.dwTimeGlobal;
 			
-			if (psNET_direct_connect) //IsGameTypeSingle())
+			if (psNET_direct_connect)
 				break;
 
 			if (Level().IsDemoPlay())
-				break;
-
-			if (g_dedicated_server && (CL == m_server->GetServerClient()))
 				break;
 
 			CheckNewPlayer(CL);
@@ -866,29 +847,8 @@ void game_sv_GameState::OnSwitchPhase(u32 old_phase, u32 new_phase)
 
 void game_sv_GameState::AddDelayedEvent(NET_Packet &tNetPacket, u16 type, u32 time, ClientID sender )
 {
-//	OnEvent(tNetPacket,type,time,sender);
-	if (IsGameTypeSingle())
-	{
-		m_event_queue->Create(tNetPacket,type,time,sender);
-		return;
-	}
-	switch (type)
-	{
-	case GAME_EVENT_PLAYER_STARTED:
-	case GAME_EVENT_PLAYER_READY:
-	case GAME_EVENT_VOTE_START:
-	case GAME_EVENT_VOTE_YES:
-	case GAME_EVENT_VOTE_NO:
-	case GAME_EVENT_PLAYER_AUTH:
-	case GAME_EVENT_CREATE_PLAYER_STATE:
-		{
-			m_event_queue->Create(tNetPacket,type,time,sender);
-		}break;
-	default:
-		{
-			m_event_queue->CreateSafe(tNetPacket,type,time,sender);
-		}break;
-	}
+	m_event_queue->Create(tNetPacket,type,time,sender);
+	return;
 }
 
 void game_sv_GameState::ProcessDelayedEvent		()

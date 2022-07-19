@@ -116,18 +116,7 @@ void CArtefact::OnH_A_Chield()
 	inherited::OnH_A_Chield		();
 
 	StopLights();
-	if (IsGameTypeSingle())
-	{
-		SwitchAfParticles(false);
-	}
-	else
-	{
-		IKinematics* K	= smart_cast<IKinematics*>(H_Parent()->Visual());
-		if (K)
-			m_CarringBoneID			= K->LL_BoneID("bip01_head");
-		else
-			m_CarringBoneID = u16(-1);
-	}
+	SwitchAfParticles(false);
 	if(m_detectorObj)
 	{
 		m_detectorObj->m_currPatrolPath = NULL;
@@ -399,9 +388,10 @@ bool CArtefact::Action(u16 cmd, u32 flags)
 	return inherited::Action(cmd,flags);
 }
 
-void CArtefact::OnStateSwitch(u32 S)
-{
-	inherited::OnStateSwitch	(S);
+void CArtefact::OnStateSwitch(u32 S, u32 oldState)
+{	
+	inherited::OnStateSwitch	(S, oldState);
+	
 	switch(S){
 	case eShowing:
 		{
@@ -409,7 +399,10 @@ void CArtefact::OnStateSwitch(u32 S)
 		}break;
 	case eHiding:
 		{
-			PlayHUDMotion("anm_hide", FALSE, this, S);
+			if (oldState != eHiding)
+			{
+				PlayHUDMotion("anm_hide", FALSE, this, S);
+			}
 		}break;
 	case eActivating:
 		{
@@ -612,11 +605,7 @@ void CArtefact::OnActiveItem ()
 
 void CArtefact::OnHiddenItem ()
 {
-	if(IsGameTypeSingle())
-		SwitchState(eHiding);
-	else
-		SwitchState(eHidden);
-
+	SwitchState(eHiding);
 	inherited::OnHiddenItem		();
 	SetState					(eHidden);
 	SetNextState				(eHidden);

@@ -289,6 +289,7 @@ float CVisualMemoryManager::object_visible_distance(const CGameObject *game_obje
 	min_view_distance					*= current_state().m_min_view_distance;
 
 	float								distance = (1.f - alpha/fov)*(max_view_distance - min_view_distance) + min_view_distance;
+	clamp( distance, 0.f, GamePersistent().Environment().CurrentEnv->fog_far );
 
 	return								(distance);
 }
@@ -326,10 +327,19 @@ float CVisualMemoryManager::get_object_velocity	(const CGameObject *game_object,
 
 float CVisualMemoryManager::get_visible_value(const CGameObject *game_object, float distance, float object_distance, float time_delta, float object_velocity, float luminocity) const
 {
-	float								always_visible_distance = current_state().m_always_visible_distance;
+	float always_visible_distance = current_state().m_always_visible_distance;
+	if ( object_distance <= always_visible_distance )
+	  return current_state().m_visibility_threshold;
+	if ( distance <= always_visible_distance )
+	  distance = always_visible_distance + EPS_L;
 
-	if (distance <= always_visible_distance + EPS_L)
-		return							(current_state().m_visibility_threshold);
+	float fog_near = GamePersistent().Environment().CurrentEnv->fog_near;
+	float fog_far  = GamePersistent().Environment().CurrentEnv->fog_far;
+	float fog_w    = 1 / ( fog_far - fog_near );
+	float fog_x    = -fog_near * fog_w;
+	float fog      = ( object_distance * fog_w + fog_x ) * current_state().m_fog_factor;
+	clamp( fog, 0.f, 1.f );
+	float fog_factor = 1.f - pow( fog, current_state().m_fog_pow );
 
 	//Alundaio: hijack not_yet_visible_object to lua
 	luabind::functor<float>	funct;
@@ -344,6 +354,7 @@ float CVisualMemoryManager::get_visible_value(const CGameObject *game_object, fl
 		(1.f + current_state().m_velocity_factor*object_velocity) *
 		(distance - object_distance) /
 		(distance - always_visible_distance)
+		* fog_factor
 	);
 }
 
@@ -725,24 +736,31 @@ void CVisualMemoryManager::update				(float time_delta)
 	}
 #endif
 
-	if (m_object && g_actor && m_object->is_relation_enemy(Actor())) {
-		xr_vector<CNotYetVisibleObject>::iterator	I = std::find_if(
-			m_not_yet_visible_objects.begin(),
-			m_not_yet_visible_objects.end(),
-			CNotYetVisibleObjectPredicate(Actor())
-		);
-		if (I != m_not_yet_visible_objects.end()) {
-			SetActorVisibility				(
-				m_object->ID(),
-				clampr(
-					(*I).m_value/visibility_threshold(),
+	if (m_object && g_actor) 
+	{
+		if (m_object->is_relation_enemy(Actor()))
+		{
+			xr_vector<CNotYetVisibleObject>::iterator	I = std::find_if(
+				m_not_yet_visible_objects.begin(),
+				m_not_yet_visible_objects.end(),
+				CNotYetVisibleObjectPredicate(Actor())
+				);
+			if (I != m_not_yet_visible_objects.end()) 
+			{
+				SetActorVisibility(
+					m_object->ID(),
+					clampr(
+					(*I).m_value / visibility_threshold(),
 					0.f,
 					1.f
-				)
-			);
+					)
+					);
+			}
+			else
+				SetActorVisibility(m_object->ID(), 0.f);
 		}
 		else
-			SetActorVisibility				(m_object->ID(),0.f);
+			SetActorVisibility(m_object->ID(), 0.f);
 	}
 
 	STOP_PROFILE
@@ -882,8 +900,7 @@ void CVisualMemoryManager::load	(IReader &packet)
 
 		const CClientSpawnManager::CSpawnCallback	*spawn_callback = Level().client_spawn_manager().callback(delayed_object.m_object_id,m_object->ID());
 		if (!spawn_callback || !spawn_callback->m_object_callback)
-			if(!g_dedicated_server)
-				Level().client_spawn_manager().add	(delayed_object.m_object_id,m_object->ID(),callback);
+			Level().client_spawn_manager().add	(delayed_object.m_object_id,m_object->ID(),callback);
 #ifdef DEBUG
 		else {
 			if (spawn_callback && spawn_callback->m_object_callback) {

@@ -60,7 +60,7 @@ void CActor::attach_Vehicle(CHolderCustom* vehicle)
 	mstate_wishful					= 0;
 	m_holderID = car->ID();
 
-	SetWeaponHideState				(INV_STATE_CAR, true);
+	SetWeaponHideState(INV_STATE_BLOCK_ALL, true);
 
 	CStepManager::on_animation_start(MotionID(), 0);
 
@@ -161,5 +161,27 @@ bool CActor::use_Vehicle(CHolderCustom* object)
 void CActor::on_requested_spawn(CObject *object)
 {
 	CCar * car= smart_cast<CCar*>(object);
+
+	if (!car) return;
+
+	car->PPhysicsShell()->SplitterHolderDeactivate();
+	if (!character_physics_support()->movement()->ActivateBoxDynamic(0))
+	{
+		car->PPhysicsShell()->SplitterHolderActivate();
+		return;
+	}
+	car->PPhysicsShell()->SplitterHolderActivate();
+
+	character_physics_support()->movement()->SetPosition(car->ExitPosition());
+	character_physics_support()->movement()->SetVelocity(car->ExitVelocity());
+
+	car->DoEnter();
+
 	attach_Vehicle(car);
+
+	//SkyLoader: straightening of actor torso:
+	Fvector			xyz;
+	car->XFORM().getXYZi(xyz);
+	r_torso.yaw = xyz.y;
+
 }

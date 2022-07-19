@@ -25,6 +25,11 @@ protected:
 	ref_light		light_omni;
 	ref_glow		glow_render;
 	Fvector			m_focus;
+	shared_str		m_light_section;
+	Fvector			m_torch_offset;
+	Fvector			m_omni_offset;
+	float			m_torch_inertion_speed_max;
+	float			m_torch_inertion_speed_min;
 private:
 	inline	bool	can_use_dynamic_lights	();
 
@@ -45,6 +50,13 @@ public:
 
 			void	Switch					();
 			void	Switch					(bool light_on);
+			
+
+			// mmccxvii: FWR code
+			//*
+			void	RealSwitch				(bool light_on);
+			//*
+
 			bool	torch_active			() const;
 
 	virtual bool	can_be_attached			() const;

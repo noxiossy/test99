@@ -17,7 +17,6 @@
 #include "Artefact.h"
 #include "MPPlayersBag.h"
 #include "WeaponKnife.h"
-#include "game_cl_base_weapon_usage_statistic.h"
 #include "xrGameSpyServer.h"
 
 #include "game_sv_mp_vote_flags.h"
@@ -123,7 +122,6 @@ void game_sv_mp::OnRoundStart()
 	
 	if( g_pGameLevel && Level().game )
 	{
-		Game().m_WeaponUsageStatistic->Clear();
 		StartToDumpStatistics();
 	}
 	
@@ -580,7 +578,6 @@ void	game_sv_mp::SpawnPlayer(ClientID id, LPCSTR N)
 		};
 		ps_who->RespawnTime = Device.dwTimeGlobal;
 
-		Game().m_WeaponUsageStatistic->OnPlayerSpawned(ps_who);
 	}
 	else
 		if (pS)
@@ -735,82 +732,10 @@ void game_sv_mp::ChargeAmmo(CSE_ALifeItemWeapon* weapon,
 							game_PlayerState::PLAYER_ITEMS_LIST & playerItems,
 							ammo_diff_t & ammo_diff)
 {
-	int ammoc_count		= _GetItemCount(ammo_string);
-	u16 ammo_magsize	= weapon->get_ammo_magsize();
-	weapon->a_elapsed	= 0;
-
-	string512	temp_ammo_class;
-	for (int i = 0; i < ammoc_count; ++i)
-	{
-		_GetItem(ammo_string, i, temp_ammo_class);
-		u32 const ammo_id = static_cast<u16>(
-			m_strWeaponsData->GetItemIdx(shared_str(temp_ammo_class))
-		);
-		u16 box_size = 0;
-		if (pSettings->line_exist(temp_ammo_class, "box_size"))
-			box_size = pSettings->r_u16(temp_ammo_class, "box_size");
-				
-		game_PlayerState::PLAYER_ITEMS_LIST::iterator temp_iter = std::find(
-			playerItems.begin(), playerItems.end(), ammo_id);
-		
-		while (temp_iter != playerItems.end())
-		{
-			weapon->ammo_type = static_cast<u8>(i);
-			playerItems.erase(temp_iter);
-			if ((ammo_magsize - weapon->a_elapsed) <= box_size)
-			{
-				ammo_diff.first = shared_str(temp_ammo_class);
-				ammo_diff.second = box_size - (ammo_magsize - weapon->a_elapsed);
-				weapon->a_elapsed = ammo_magsize;
-				break;
-			} else
-			{
-				weapon->a_elapsed = weapon->a_elapsed + box_size;
-			}
-			temp_iter = std::find(playerItems.begin(), playerItems.end(), ammo_id);
-		}
-		if (weapon->a_elapsed)
-			break;
-	}
-	if (!weapon->a_elapsed)
-	{
-		_GetItem(ammo_string, 0, temp_ammo_class);
-		weapon->ammo_type = 0;
-		if (CanChargeFreeAmmo(temp_ammo_class))
-		{
-			weapon->a_elapsed = ammo_magsize;
-		}
-	}
 }
 
 void game_sv_mp::ChargeGrenades(CSE_ALifeItemWeapon* weapon, LPCSTR grenade_string, game_PlayerState::PLAYER_ITEMS_LIST & playerItems)
 {
-	int grenades_count		= _GetItemCount(grenade_string);
-	R_ASSERT2(grenades_count <= 4,
-		make_string("weapon [%s] has greater than 4 types of grenade [%s]",
-			weapon->s_name.c_str(),
-			grenade_string
-		).c_str()
-	);
-	weapon->a_elapsed_grenades.unpack_from_byte(0);
-	string512	temp_ammo_class;
-	for (int i = 0; i < grenades_count; ++i)
-	{
-		_GetItem(grenade_string, i, temp_ammo_class);
-		u32 const ammo_id = static_cast<u16>(
-			m_strWeaponsData->GetItemIdx(shared_str(temp_ammo_class))
-		);
-				
-		game_PlayerState::PLAYER_ITEMS_LIST::iterator temp_iter = std::find(
-			playerItems.begin(), playerItems.end(), ammo_id);
-		if (temp_iter != playerItems.end())
-		{
-			playerItems.erase(temp_iter);
-			weapon->a_elapsed_grenades.grenades_count	=	1;
-			weapon->a_elapsed_grenades.grenades_type	=	i;
-			break;
-		}
-	}
 }
 
 void	game_sv_mp::SetAmmoForWeapon(CSE_ALifeItemWeapon* weapon,
@@ -818,45 +743,6 @@ void	game_sv_mp::SetAmmoForWeapon(CSE_ALifeItemWeapon* weapon,
 									 game_PlayerState::PLAYER_ITEMS_LIST & playerItems,
 									 ammo_diff_t & ammo_diff)
 {
-	R_ASSERT(weapon);
-	R_ASSERT(weapon->s_name.c_str());
-	shared_str ammo_classes = pSettings->r_string(weapon->s_name, "ammo_class");
-	R_ASSERT2(ammo_classes.size() < 512, make_string("ammo_class parameter of [%s] is too large", 
-		weapon->s_name.c_str()).c_str());
-	VERIFY2(ammo_classes.size(), make_string("ammo_class parameter of [%s] not found", 
-		weapon->s_name.c_str()).c_str());
-	
-	if (!ammo_classes.size())
-	{
-#ifdef DEBUG
-		Msg("! WARNING: not found ammo_class for [%s]", weapon->s_name.c_str());
-#endif
-		weapon->a_elapsed	= 0;
-	} else
-	{
-		ChargeAmmo(weapon, ammo_classes.c_str(), playerItems, ammo_diff);
-	}
-	
-	if ((Addons & CSE_ALifeItemWeapon::eWeaponAddonGrenadeLauncher) || 
-		(weapon->m_grenade_launcher_status == ALife::eAddonPermanent))
-	{
-		shared_str grenade_classes = pSettings->r_string(weapon->s_name, "grenade_class");
-		R_ASSERT2(grenade_classes.size() < 512, make_string(
-			"grenade_class parameter of [%s] is too large", 
-			weapon->s_name.c_str()).c_str()
-		);
-		if (!grenade_classes.size())
-		{
-#ifdef DEBUG
-		Msg("! WARNING: not found grenade_class for [%s]", weapon->s_name.c_str());
-#endif
-			weapon->a_elapsed_grenades.unpack_from_byte(0);
-			return;
-		} else
-		{
-			ChargeGrenades(weapon, grenade_classes.c_str(), playerItems);
-		}
-	}
 }
 
 void	game_sv_mp::SpawnAmmoDifference(u16 actorId, ammo_diff_t const & ammo_diff)
@@ -1430,7 +1316,6 @@ void game_sv_mp::OnPlayerKilled(NET_Packet P)
 	OnPlayerKillPlayer(ps_killer, ps_killed, KillType, SpecialKill, pWeaponA);
 	if (KillType == KT_BLEEDING)
 	{
-		Game().m_WeaponUsageStatistic->OnBleedKill(ps_killer, ps_killed, WeaponID);
 	}
 	//---------------------------------------------------
 	SendPlayerKilledMessage((ps_killed)?ps_killed->GameID:KilledID, KillType, (ps_killer)?ps_killer->GameID:KillerID, WeaponID, SpecialKill);
@@ -1728,7 +1613,6 @@ void	game_sv_mp::Player_AddMoney			(game_PlayerState* ps, s32 MoneyAmount)
 
 	ps->money_for_round = s32(TotalMoney);
 	//---------------------------------------
-	Game().m_WeaponUsageStatistic->OnPlayerAddMoney(ps, MoneyAmount);
 	//---------------------------------------	
 };
 //---------------------------------------------------------------------
@@ -1908,9 +1792,6 @@ void game_sv_mp::DumpOnlineStatistic()
 
 			if (!l_pC->ps)
 				return;
-		
-			if(m_server->GetServerClient()==l_pC && g_dedicated_server) 
-				return;
 			
 			if(!l_pC->net_Ready)
 				return;
@@ -1952,20 +1833,6 @@ void game_sv_mp::WritePlayerStats(CInifile& ini, LPCSTR sect, xrClientData* pCl)
 	ini.w_u32	(sect,"ping",			pCl->ps->ping);
 	ini.w_u32	(sect,"money",			pCl->ps->money_for_round);
 	ini.w_u32	(sect,"online_time_sec",(Level().timeServer()-pCl->ps->m_online_time)/1000);
-
-	if(Game().m_WeaponUsageStatistic->CollectData())
-	{
-		Player_Statistic& plstats		= *(Game().m_WeaponUsageStatistic->FindPlayer(pCl->ps->getName()));
-		u32 hs		= plstats.m_dwSpecialKills[0];
-		u32 bks		= plstats.m_dwSpecialKills[1];
-		u32 knf		= plstats.m_dwSpecialKills[2];
-		u32 es		= plstats.m_dwSpecialKills[3];
-
-		ini.w_u32	(sect,"headshots_kills",	hs);
-		ini.w_u32	(sect,"backstab_kills",		bks);
-		ini.w_u32	(sect,"knife_kills",		knf);
-		ini.w_u32	(sect,"eye_kills",			es);
-	}
 }
 
 void game_sv_mp::WriteGameState(CInifile& ini, LPCSTR sect, bool bRoundResult)
@@ -2105,8 +1972,6 @@ void game_sv_mp::DumpRoundStatistics()
 		{
 			xrClientData *l_pC			= static_cast<xrClientData*>(client);
 		
-			if(m_server->GetServerClient()==l_pC && g_dedicated_server) 
-				return;
 			if (!l_pC->m_cdkey_digest.size())
 				return;
 			if (!l_pC->ps)
@@ -2128,7 +1993,6 @@ void game_sv_mp::DumpRoundStatistics()
 	
 	WriteGameState					(ini,current_section.c_str(), true);
 
-	Game().m_WeaponUsageStatistic->SaveDataLtx(ini);
 	//Game().m_WeaponUsageStatistic->Clear();
 }
 
@@ -2289,7 +2153,6 @@ void	game_sv_mp::OnPlayerChangeName		(NET_Packet& P, ClientID sender)
 		pClient->owner->set_name_replace(ps->getName());
 	};
 
-	Game().m_WeaponUsageStatistic->ChangePlayerName( old_name.c_str(), ps->getName() );
 
 	signal_Syncronize();
 };

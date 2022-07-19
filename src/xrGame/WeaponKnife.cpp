@@ -71,9 +71,9 @@ void CWeaponKnife::Load	(LPCSTR section)
 	knife_material_idx =  GMLib.GetMaterialIdx(KNIFE_MATERIAL_NAME);
 }
 
-void CWeaponKnife::OnStateSwitch	(u32 S)
+void CWeaponKnife::OnStateSwitch	(u32 S, u32 oldState)
 {
-	inherited::OnStateSwitch(S);
+	inherited::OnStateSwitch(S, oldState);
 	switch (S)
 	{
 	case eIdle:
@@ -83,7 +83,10 @@ void CWeaponKnife::OnStateSwitch	(u32 S)
 		switch2_Showing	();
 		break;
 	case eHiding:
-		switch2_Hiding	();
+		if (oldState != eHiding)
+		{
+			switch2_Hiding();
+		}
 		break;
 	case eHidden:
 		switch2_Hidden	();
@@ -95,14 +98,7 @@ void CWeaponKnife::OnStateSwitch	(u32 S)
 			//fHitPower		= fHitPower_1;
 			if (ParentIsActor())
 			{
-				if (GameID() == eGameIDSingle)
-				{
-					fCurrentHit			= fvHitPower_1[g_SingleGameDifficulty];
-				}
-				else
-				{
-					fCurrentHit			= fvHitPower_1[egdMaster];
-				}
+				fCurrentHit			= fvHitPower_1[g_SingleGameDifficulty];
 			}
 			else
 			{
@@ -119,14 +115,7 @@ void CWeaponKnife::OnStateSwitch	(u32 S)
 			//fHitPower		= fHitPower_2;
 			if (ParentIsActor())
 			{
-				if (GameID() == eGameIDSingle)
-				{
-					fCurrentHit			= fvHitPower_2[g_SingleGameDifficulty];
-				}
-				else
-				{
-					fCurrentHit			= fvHitPower_2[egdMaster];
-				}
+				fCurrentHit			= fvHitPower_2[g_SingleGameDifficulty];
 			}
 			else
 			{

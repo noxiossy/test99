@@ -518,6 +518,51 @@ _value_type CStalkerPropertyEvaluatorTooFarToKillEnemy::evaluate	()
 }
 
 //////////////////////////////////////////////////////////////////////////
+// CStalkerPropertyEvaluatorUseSuddenness
+//////////////////////////////////////////////////////////////////////////
+
+CStalkerPropertyEvaluatorUseSuddenness::CStalkerPropertyEvaluatorUseSuddenness	(CAI_Stalker *object, LPCSTR evaluator_name) :
+	inherited					(object ? object->lua_game_object() : 0,evaluator_name)
+{
+}
+
+_value_type CStalkerPropertyEvaluatorUseSuddenness::evaluate	()
+{
+	const CEntityAlive* enemy = object().memory().enemy().selected();
+	if (!enemy)
+		return (false);
+
+	if (!enemy->g_Alive())
+		return (false);
+
+	if (!object().best_weapon())
+		return (false);
+
+	if (!object().memory().enemy().selected()->human_being())
+		return (false);
+
+	const CAI_Stalker* ene = smart_cast<const CAI_Stalker*>(enemy);
+	if (ene && !ene->memory().enemy().selected())
+		return (true);
+
+	CVisualMemoryManager*visual_memory_manager = object().memory().enemy().selected()->visual_memory();
+	VERIFY(visual_memory_manager);
+
+	if (visual_memory_manager->visible_now(&object()))
+		return (false);
+
+	u32 last_time_seen = visual_memory_manager->visible_object_time_last_seen(object().dcast_CObject());
+
+	if (last_time_seen == u32(-1))
+		return (true);
+
+	if (Device.dwTimeGlobal < last_time_seen + 10000)
+		return (false);
+
+	return (true);
+}
+
+//////////////////////////////////////////////////////////////////////////
 // CStalkerPropertyEvaluatorLowCover
 //////////////////////////////////////////////////////////////////////////
 

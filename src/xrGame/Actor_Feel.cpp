@@ -125,7 +125,7 @@ void CActor::PickupModeUpdate()
 		m_pObjectWeLookingAt->cast_inventory_item()				&& 
 		m_pObjectWeLookingAt->cast_inventory_item()->Useful()	&&
 		m_pUsableObject											&& 
-		!m_pUsableObject->nonscript_usable()					&&
+		m_pUsableObject->nonscript_usable()						&&
 		!Level().m_feel_deny.is_object_denied(m_pObjectWeLookingAt) )
 	{
 		m_pUsableObject->use(this);
@@ -152,7 +152,7 @@ void	CActor::PickupModeUpdate_COD	()
 		
 	if (!g_Alive() || eacFirstEye != cam_active) 
 	{
-		CurrentGameUI()->UIMainIngameWnd->SetPickUpItem(NULL);
+		CurrentGameUI()->UIMainIngameWnd->SetPickUpItem(nullptr);
 		return;
 	};
 	
@@ -217,7 +217,7 @@ void	CActor::PickupModeUpdate_COD	()
 
 	CurrentGameUI()->UIMainIngameWnd->SetPickUpItem(pNearestItem);
 
-	if (pNearestItem && m_bPickupMode)
+	if (pNearestItem && m_bPickupMode && !m_pPersonWeLookingAt)
 	{
 		CUsableScriptObject*	pUsableObject = smart_cast<CUsableScriptObject*>(pNearestItem);
 		if(pUsableObject && (!m_pUsableObject))
@@ -230,48 +230,7 @@ void	CActor::PickupModeUpdate_COD	()
 
 void	CActor::Check_for_AutoPickUp()
 {
-	// mp only
-	if (!psActorFlags.test(AF_AUTOPICKUP))		return;
-	if (IsGameTypeSingle())						return;
-	if (Level().CurrentControlEntity() != this) return;
-	if (!g_Alive())								return;
-
-	Fvector bc; 
-	bc.add				(Position(), m_AutoPickUp_AABB_Offset);
-	Fbox APU_Box;
-	APU_Box.set			(Fvector().sub(bc, m_AutoPickUp_AABB), Fvector().add(bc, m_AutoPickUp_AABB));
-
-	xr_vector<ISpatial*>	ISpatialResult;
-	g_SpatialSpace->q_box   (ISpatialResult, 0, STYPE_COLLIDEABLE, bc, m_AutoPickUp_AABB);
-
-	// Determine visibility for dynamic part of scene
-	for (u32 o_it=0; o_it<ISpatialResult.size(); o_it++)
-	{
-		ISpatial*		spatial	= ISpatialResult[o_it];
-		CInventoryItem*	pIItem	= smart_cast<CInventoryItem*> (spatial->dcast_CObject());
-
-		if (0 == pIItem)														continue;
-		if (!pIItem->CanTake())													continue;
-		if (Level().m_feel_deny.is_object_denied(spatial->dcast_CObject()) )	continue;
-
-
-		CGrenade*	pGrenade	= smart_cast<CGrenade*> (pIItem);
-		if (pGrenade) continue;
-
-		if (APU_Box.Pick(pIItem->object().Position(), pIItem->object().Position()))
-		{
-			if (GameID() == eGameIDDeathmatch || GameID() == eGameIDTeamDeathmatch)
-			{
-				if (pIItem->BaseSlot() == INV_SLOT_2 || pIItem->BaseSlot() == INV_SLOT_3 )
-				{
-					if (inventory().ItemFromSlot(pIItem->BaseSlot()))
-						continue;
-				}
-			}			
-			
-			Game().SendPickUpEvent(ID(), pIItem->object().ID());
-		}		
-	}
+	return;
 }
 
 
@@ -313,10 +272,6 @@ void CActor::feel_sound_new(CObject* who, int type, CSound_UserDataPtr user_data
 #ifdef	ACTOR_FEEL_GRENADE
 void CActor::Feel_Grenade_Update( float rad )
 {
-	if ( !IsGameTypeSingle() )
-	{
-		return;
-	}
 	// Find all nearest objects
 	Fvector pos_actor;
 	Center( pos_actor );

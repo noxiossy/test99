@@ -116,11 +116,9 @@ CCustomMonster::~CCustomMonster	()
 
 #ifdef DEBUG
 	Msg							("dumping client spawn manager stuff for object with id %d",ID());
-	if(!g_dedicated_server)
-		Level().client_spawn_manager().dump	(ID());
+	Level().client_spawn_manager().dump	(ID());
 #endif // DEBUG
-	if(!g_dedicated_server)
-		Level().client_spawn_manager().clear(ID());
+	Level().client_spawn_manager().clear(ID());
 
 }
 
@@ -602,7 +600,7 @@ void CCustomMonster::update_range_fov	(float &new_range, float &new_fov, float s
 
 	float	current_fog_density				= GamePersistent().Environment().CurrentEnv->fog_density	;	
 	// 0=no_fog, 1=full_fog, >1 = super-fog
-	float	current_far_plane				= GamePersistent().Environment().CurrentEnv->far_plane	;	
+	float	current_far_plane				= GamePersistent().Environment().CurrentEnv->fog_far	;	
 	// 300=standart, 50=super-fog
 
 	new_fov									= start_fov;
@@ -623,6 +621,7 @@ void CCustomMonster::update_range_fov	(float &new_range, float &new_fov, float s
 			)
 		)
 	;
+	clamp( new_range, 0.f, current_far_plane );
 }
 
 void CCustomMonster::eye_pp_s1			()
@@ -1369,9 +1368,6 @@ void CCustomMonster::destroy_anim_mov_ctrl	()
 void CCustomMonster::ForceTransform(const Fmatrix& m)
 {
 	character_physics_support()->ForceTransform( m );
-	const float block_damage_time_seconds = 2.f;
-	if(!IsGameTypeSingle())
-		character_physics_support()->movement()->BlockDamageSet( u64( block_damage_time_seconds/fixed_step ) );
 }
 
 Fvector	CCustomMonster::spatial_sector_point	( )

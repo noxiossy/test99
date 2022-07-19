@@ -7,6 +7,9 @@
 #include "static_cast_checked.hpp"
 #include "actoreffector.h"
 #include "../xrEngine/IGame_Persistent.h"
+#include "Weapon.h"
+#include "InventoryOwner.h"
+#include "inventory.h"
 
 player_hud* g_player_hud = NULL;
 Fvector _ancor_pos;
@@ -14,10 +17,6 @@ Fvector _wpn_root_pos;
 
 float CalcMotionSpeed(const shared_str& anim_name)
 {
-
-	if(!IsGameTypeSingle() && (anim_name=="anm_show" || anim_name=="anm_hide") )
-		return 2.0f;
-	else
 		return 1.0f;
 }
 
@@ -134,6 +133,24 @@ void attachable_hud_item::set_bone_visible(const shared_str& bone_name, BOOL bVi
 	bVisibleNow		= m_model->LL_GetBoneVisible	(bone_id);
 	if(bVisibleNow!=bVisibility)
 		m_model->LL_SetBoneVisible	(bone_id,bVisibility, TRUE);
+}
+
+void attachable_hud_item::set_bone_visible(const std::vector<shared_str>& bone_names, BOOL bVisibility, BOOL bSilent)
+{
+	for (const auto& bone_name : bone_names)
+		set_bone_visible(bone_name, bVisibility, bSilent);
+}
+
+BOOL attachable_hud_item::get_bone_visible(const shared_str& bone_name)
+{
+	u16 bone_id = m_model->LL_BoneID(bone_name);
+	return m_model->LL_GetBoneVisible(bone_id);
+}
+
+bool attachable_hud_item::has_bone(const shared_str& bone_name)
+{
+	u16 bone_id = m_model->LL_BoneID(bone_name);
+	return (bone_id != BI_NONE);
 }
 
 void attachable_hud_item::update(bool bForce)
@@ -277,18 +294,16 @@ void hud_item_measures::load(const shared_str& sect_name, IKinematics* K)
 	}else
 		m_shell_point_offset.set(0,0,0);
 
-	m_hands_offset[0][0].set	(0,0,0);
-	m_hands_offset[1][0].set	(0,0,0);
 
 	strconcat					(sizeof(val_name),val_name,"aim_hud_offset_pos",_prefix);
-	m_hands_offset[0][1]		= pSettings->r_fvector3(sect_name, val_name);
+	m_hands_offset[m_hands_offset_pos][m_hands_offset_type_aim] = READ_IF_EXISTS(pSettings, r_fvector3, sect_name, val_name, Fvector{});
 	strconcat					(sizeof(val_name),val_name,"aim_hud_offset_rot",_prefix);
-	m_hands_offset[1][1]		= pSettings->r_fvector3(sect_name, val_name);
+	m_hands_offset[m_hands_offset_rot][m_hands_offset_type_aim] = READ_IF_EXISTS(pSettings, r_fvector3, sect_name, val_name, Fvector{});
 
 	strconcat					(sizeof(val_name),val_name,"gl_hud_offset_pos",_prefix);
-	m_hands_offset[0][2]		= pSettings->r_fvector3(sect_name, val_name);
+	m_hands_offset[m_hands_offset_pos][m_hands_offset_type_gl] = READ_IF_EXISTS(pSettings, r_fvector3, sect_name, val_name, Fvector{});
 	strconcat					(sizeof(val_name),val_name,"gl_hud_offset_rot",_prefix);
-	m_hands_offset[1][2]		= pSettings->r_fvector3(sect_name, val_name);
+	m_hands_offset[m_hands_offset_rot][m_hands_offset_type_gl] = READ_IF_EXISTS(pSettings, r_fvector3, sect_name, val_name, Fvector{});
 
 
 	R_ASSERT2(pSettings->line_exist(sect_name,"fire_point")==pSettings->line_exist(sect_name,"fire_bone"),		sect_name.c_str());
@@ -302,7 +317,7 @@ attachable_hud_item::~attachable_hud_item()
 {
 	IRenderVisual* v			= m_model->dcast_RenderVisual();
 	::Render->model_Delete		(v);
-	m_model						= NULL;
+	m_model						= nullptr;
 }
 
 void attachable_hud_item::load(const shared_str& sect_name)
@@ -375,7 +390,7 @@ u32 attachable_hud_item::anim_play(const shared_str& anm_name_b, BOOL bMixIn, co
 	//R_ASSERT2		(parent_object, "object has no parent actor");
 	//CObject*		parent_object = static_cast_checked<CObject*>(&m_parent_hud_item->object());
 
-	if (IsGameTypeSingle() && parent_object.H_Parent() == Level().CurrentControlEntity())
+	if (parent_object.H_Parent() == Level().CurrentControlEntity())
 	{
 		CActor* current_actor	= static_cast_checked<CActor*>(Level().CurrentControlEntity());
 		VERIFY					(current_actor);
@@ -655,8 +670,21 @@ void player_hud::update_inertion(Fmatrix& trans)
 		// pitch compensation
 		float pitch							= angle_normalize_signed(xform.k.getP());
 		origin.mad							(xform.k,	-pitch * PITCH_OFFSET_D);
-		origin.mad							(xform.i,	-pitch * PITCH_OFFSET_R);
-		origin.mad							(xform.j,	-pitch * PITCH_OFFSET_N);
+
+		if (Actor()->inventory().GetActiveSlot() != NO_ACTIVE_SLOT)
+		{
+			CWeapon *pW = smart_cast<CWeapon*>(Actor()->inventory().ItemFromSlot(Actor()->inventory().GetActiveSlot()));
+			if (pW && pW->IsZoomed())
+			{
+				origin.mad							(xform.i,	-pitch * 0.f);
+				origin.mad							(xform.j,	-pitch * 0.f);
+			}
+			else 
+			{
+				origin.mad(xform.i, -pitch * PITCH_OFFSET_R);
+				origin.mad(xform.j, -pitch * PITCH_OFFSET_N);
+			}
+		}
 	}
 }
 

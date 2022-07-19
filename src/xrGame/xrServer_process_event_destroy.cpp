@@ -5,6 +5,7 @@
 #include "xrserver_objects.h"
 #include "game_base.h"
 #include "game_cl_base.h"
+#include "game_sv_base.h"
 #include "ai_space.h"
 #include "alife_object_registry.h"
 
@@ -45,11 +46,6 @@ void xrServer::Process_event_destroy	(NET_Packet& P, ClientID sender, u32 time, 
 	xrClientData					*c_from = ID_to_client(sender);	// клиент, кто прислал
 	R_ASSERT						(c_dest == c_from);							// assure client ownership of event
 	u16								parent_id = e_dest->ID_Parent;
-
-#ifdef MP_LOGGING
-	Msg("--- SV: Process destroy: parent [%d] item [%d][%s]", 
-		parent_id, id_dest, e_dest->name());
-#endif //#ifdef MP_LOGGING
 
 	//---------------------------------------------
 	NET_Packet	P2, *pEventPack = pEPack;

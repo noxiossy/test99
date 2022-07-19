@@ -171,22 +171,11 @@ void xrServer::Process_event	(NET_Packet& P, ClientID sender)
 
 			xrClientData *l_pC	= ID_to_client(sender);
 			VERIFY				(game && l_pC);
-#ifndef MASTER_GOLD
-			if ((game->Type() != eGameIDSingle) && l_pC && l_pC->owner)
-			{
-				Msg					("* [%2d] killed by [%2d] - sended by [0x%08x]", id_dest, id_src, l_pC->ID.value());
-			}
-#endif // #ifndef MASTER_GOLD
 
 			CSE_Abstract*		e_dest		= receiver;	// кто умер
 			// this is possible when hit event is sent before destroy event
 			if (!e_dest)
 				break;
-
-#ifndef MASTER_GOLD
-			if (game->Type() != eGameIDSingle)
-				Msg				("* [%2d] is [%s:%s]", id_dest, *e_dest->s_name, e_dest->name_replace());
-#endif // #ifndef MASTER_GOLD
 
 			CSE_Abstract*		e_src		= game->get_entity_from_eid	(id_src	);	// кто убил
 			if (!e_src) {
@@ -201,10 +190,6 @@ void xrServer::Process_event	(NET_Packet& P, ClientID sender)
 				return;
 			}
 //			R_ASSERT2			(e_dest && e_src, "Killer or/and being killed are offline or not exist at all :(");
-#ifndef MASTER_GOLD
-			if (game->Type() != eGameIDSingle)
-				Msg				("* [%2d] is [%s:%s]", id_src, *e_src->s_name, e_src->name_replace());
-#endif // #ifndef MASTER_GOLD
 
 			game->on_death		(e_dest,e_src);
 
@@ -224,14 +209,12 @@ void xrServer::Process_event	(NET_Packet& P, ClientID sender)
 
 			//////////////////////////////////////////////////////////////////////////
 			// 
-			if (game->Type() == eGameIDSingle) {
-				P.w_begin			(M_EVENT);
-				P.w_u32				(timestamp);
-				P.w_u16				(GE_KILL_SOMEONE);
-				P.w_u16				(id_src);
-				P.w_u16				(destination);
-				SendTo				(c_src->ID, P, net_flags(TRUE, TRUE));
-			}
+			P.w_begin			(M_EVENT);
+			P.w_u32				(timestamp);
+			P.w_u16				(GE_KILL_SOMEONE);
+			P.w_u16				(id_src);
+			P.w_u16				(destination);
+			SendTo				(c_src->ID, P, net_flags(TRUE, TRUE));
 			//////////////////////////////////////////////////////////////////////////
 
 			VERIFY					(verify_entities());
@@ -341,6 +324,12 @@ void xrServer::Process_event	(NET_Packet& P, ClientID sender)
 			CSE_ALifeTraderAbstract*	pTa = smart_cast<CSE_ALifeTraderAbstract*>(e_dest);
 			pTa->m_dwMoney				= P.r_u32();
 						
+		}break;
+	case GE_SYNC_ALIFEITEM:
+		{
+			CSE_ALifeItem* item = smart_cast<CSE_ALifeItem*>(receiver);
+			if (item)
+				item->m_fCondition = P.r_float();
 		}break;
 	case GE_FREEZE_OBJECT:
 		break;

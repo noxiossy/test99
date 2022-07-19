@@ -49,10 +49,8 @@ void CActor::IR_OnKeyboardPress(int cmd)
 	{
 	case kWPN_FIRE:
 		{
-			if( (mstate_wishful & mcLookout) && !IsGameTypeSingle() ) return;
-
 			u16 slot = inventory().GetActiveSlot();
-			if(inventory().ActiveItem() && (slot==INV_SLOT_3 || slot==INV_SLOT_2) )
+			if(inventory().ActiveItem() && (slot==INV_SLOT_3 || slot==INV_SLOT_2 || slot==KNIFE_SLOT) )
 				mstate_wishful &=~mcSprint;
 			//-----------------------------
 			if (OnServer())
@@ -70,6 +68,48 @@ void CActor::IR_OnKeyboardPress(int cmd)
 
 	if (!g_Alive()) return;
 
+	switch (cmd)
+	{
+		case kNIGHT_VISION:
+		{
+							  SwitchNightVision();
+							  break;
+		};
+		case kQUICK_USE_1:
+		case kQUICK_USE_2:
+		case kQUICK_USE_3:
+	case kQUICK_USE_4:
+		{
+			if (!CurrentGameUI()->GetActorMenu().m_pQuickSlot)
+				break;
+			const shared_str& item_name		= g_quick_use_slots[cmd-kQUICK_USE_1];
+			if(item_name.size())
+			{
+				PIItem itm = inventory().GetAny(item_name.c_str());
+
+				if(itm)
+				{
+					if (IsGameTypeSingle())
+					{
+						inventory().Eat				(itm);
+					} else
+					{
+						inventory().ClientEat		(itm);
+					}
+					
+					StaticDrawableWrapper* _s		= CurrentGameUI()->AddCustomStatic("item_used", true);
+					string1024					str;
+					strconcat					(sizeof(str),str,*CStringTable().translate("st_item_used"),": ", itm->NameItem());
+					_s->wnd()->TextItemControl()->SetText(str);
+					
+					CurrentGameUI()->GetActorMenu().m_pQuickSlot->ReloadReferences(this);
+				}
+
+			}
+		}break;
+	};		
+		
+		
 	if(m_holder && kUSE != cmd)
 	{
 		m_holder->OnKeyboardPress			(cmd);
@@ -103,11 +143,11 @@ void CActor::IR_OnKeyboardPress(int cmd)
 	case kCAM_1:	cam_Set			(eacFirstEye);				break;
 	case kCAM_2:	cam_Set			(eacLookAt);				break;
 	case kCAM_3:	cam_Set			(eacFreeLook);				break;
-	case kNIGHT_VISION:
+	/*case kNIGHT_VISION:
 		{
 			SwitchNightVision();
 			break;
-		}
+		}*/
 	case kTORCH:
 		{
 			SwitchTorch();
@@ -159,7 +199,7 @@ void CActor::IR_OnKeyboardPress(int cmd)
 			OnPrevWeaponSlot();
 		}break;
 
-	case kQUICK_USE_1:
+	/*case kQUICK_USE_1:
 	case kQUICK_USE_2:
 	case kQUICK_USE_3:
 	case kQUICK_USE_4:
@@ -187,7 +227,7 @@ void CActor::IR_OnKeyboardPress(int cmd)
 					CurrentGameUI()->GetActorMenu().m_pQuickSlot->ReloadReferences(this);
 				}
 			}
-		}break;
+		}break;*/
 	}
 }
 
@@ -428,7 +468,7 @@ void CActor::ActorUse()
 						if ( !m_pPersonWeLookingAt->deadbody_closed_status() )
 						{
 							if(pEntityAliveWeLookingAt->AlreadyDie() && 
-								pEntityAliveWeLookingAt->GetLevelDeathTime()+3000 < Device.dwTimeGlobal)
+								pEntityAliveWeLookingAt->GetLevelDeathTime()+1000 < Device.dwTimeGlobal)
 								// 99.9% dead
 								pGameSP->StartCarBody(this, m_pPersonWeLookingAt );
 						}

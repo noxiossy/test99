@@ -41,16 +41,16 @@ public:
 	IC		u32				CurrStateTime		() const			{return Device.dwTimeGlobal-m_dw_curr_state_time;}
 	IC		void			ResetSubStateTime	()					{m_dw_curr_substate_time=Device.dwTimeGlobal;}
 	virtual void			SwitchState			(u32 S)				= 0;
-	virtual void			OnStateSwitch		(u32 S)				= 0;
+	virtual void			OnStateSwitch		(u32 S, u32 oldState) 	= 0;
 };
 
 class CHudItem :public CHUDState
 {
-protected:
+public:
 							CHudItem			();
 	virtual					~CHudItem			();
 	virtual DLL_Pure*		_construct			();
-	
+protected:
 	Flags16					m_huditem_flags;
 	enum{
 		fl_pending			= (1<<0),
@@ -104,7 +104,7 @@ public:
 	bool						IsShowing			()	const		{	return GetState() == eShowing;}
 
 	virtual void				SwitchState			(u32 S);
-	virtual void				OnStateSwitch		(u32 S);
+	virtual void				OnStateSwitch		(u32 S, u32 oldState);
 
 	virtual void				OnAnimationEnd		(u32 state);
 	virtual void				OnMotionMark		(u32 state, const motion_marks&){};
@@ -137,6 +137,8 @@ public:
 	virtual void				on_b_hud_detach			();
 	IC BOOL						HudInertionEnabled		()	const			{ return m_huditem_flags.test(fl_inertion_enable);}
 	IC BOOL						HudInertionAllowed		()	const			{ return m_huditem_flags.test(fl_inertion_allow);}
+	virtual float 				GetInertionFactor		() 					{ return 1.f; }; //--#SM+#--
+    virtual float 				GetInertionPowerFactor	() 					{ return 1.f; }; //--#SM+#--
 	virtual void				render_hud_mode			()					{};
 	virtual bool				need_renderable			()					{return true;};
 	virtual void				render_item_3d_ui		()					{}

@@ -48,10 +48,17 @@
 #include "Torch.h"
 #include "physicobject.h"
 #include "customoutfit.h"
+#include "InventoryBox.h"
 //Alundaio
 #include "inventory_upgrade_manager.h"
 #include "inventory_upgrade_root.h"
 #include "inventory_item.h"
+
+#include "inventory_item_impl.h"
+#include "inventory_item.h"
+#include "inventory.h"
+#include "xrserver_objects_alife_items.h"
+#include "./xrServerEntities/inventory_space.h"
 //-Alundaio
 
 bool CScriptGameObject::GiveInfoPortion(LPCSTR info_id)
@@ -247,7 +254,6 @@ void CScriptGameObject::IterateInventory(luabind::functor<bool> functor, luabind
 			return;
 }
 
-#include "InventoryBox.h"
 void CScriptGameObject::IterateInventoryBox(luabind::functor<bool> functor, luabind::object object)
 {
     CInventoryBox			*inventory_box = smart_cast<CInventoryBox*>(&this->object());
@@ -712,15 +718,13 @@ void CScriptGameObject::SetCharacterCommunity(LPCSTR comm, int squad, int group)
     }
     CHARACTER_COMMUNITY	community;
     community.set(comm);
-    if (community.index() >= 0)
-    {
-        pInventoryOwner->SetCommunity(community.index());
-        entity->ChangeTeam(community.team(), squad, group);
-    }
-    else
-    {
-        ai().script_engine().script_log(ScriptStorage::eLuaMessageTypeInfo, "SetCharacterCommunity can't set %s for %s", comm, Name());
-    }
+	if (community.index() >= 0)
+	{
+		pInventoryOwner->SetCommunity(community.index());
+		entity->ChangeTeam(community.team(), squad, group);
+	}
+	else
+		ai().script_engine().script_log(ScriptStorage::eLuaMessageTypeInfo, "SetCharacterCommunity can't set %s for %s", comm, Name());
 }
 
 LPCSTR CScriptGameObject::sound_voice_prefix() const
@@ -1154,8 +1158,9 @@ CScriptGameObject *CScriptGameObject::active_detector() const
     if (result)
     {
         CCustomDetector *detector = smart_cast<CCustomDetector*>(result);
-        VERIFY(detector);
-        return			(detector->IsWorking() ? result->object().lua_game_object() : 0);
+		if (!detector)
+			return (0);
+        return (detector->IsWorking() ? result->object().lua_game_object() : 0);
     }
     return (0);
 }
@@ -1169,7 +1174,7 @@ CScriptGameObject *CScriptGameObject::item_in_slot(u32 slot_id) const
         return		(0);
     }
 
-    CInventoryItem	*result = inventory_owner->inventory().ItemFromSlot((u16) slot_id);
+    CInventoryItem	*result = slot_id != NO_ACTIVE_SLOT ? inventory_owner->inventory().ItemFromSlot((u16) slot_id) : (0);
     return			(result ? result->object().lua_game_object() : 0);
 }
 
@@ -1581,53 +1586,65 @@ bool CScriptGameObject::death_sound_enabled() const
 
 void CScriptGameObject::register_door()
 {
-    VERIFY2(!m_door, make_string("object %s has been registered as a door already", m_game_object->cName().c_str()));
-    m_door = ai().doors().register_door(*smart_cast<CPhysicObject*>(m_game_object));
+    //VERIFY2(!m_door, make_string("object %s has been registered as a door already", m_game_object->cName().c_str()));
+	if (!m_door)
+		m_door = ai().doors().register_door(*smart_cast<CPhysicObject*>(m_game_object));
     //	Msg									( "registering door 0x%-08x", m_door );
 }
 
 void CScriptGameObject::unregister_door()
 {
-    VERIFY2(m_door, make_string("object %s is not a door", m_game_object->cName().c_str()));
+    //VERIFY2(m_door, make_string("object %s is not a door", m_game_object->cName().c_str()));
     //	Msg									( "UNregistering door 0x%-08x", m_door );
-    ai().doors().unregister_door(m_door);
-    m_door = 0;
+	if (m_door)
+	{
+		ai().doors().unregister_door(m_door);
+		m_door = 0;
+	}
 }
 
 void CScriptGameObject::on_door_is_open()
 {
-    VERIFY2(m_door, make_string("object %s hasn't been registered as a door already", m_game_object->cName().c_str()));
-    ai().doors().on_door_is_open(m_door);
+   // VERIFY2(m_door, make_string("object %s hasn't been registered as a door already", m_game_object->cName().c_str()));
+	if (m_door)
+		ai().doors().on_door_is_open(m_door);
 }
 
 void CScriptGameObject::on_door_is_closed()
 {
-    VERIFY2(m_door, make_string("object %s hasn't been registered as a door already", m_game_object->cName().c_str()));
-    ai().doors().on_door_is_closed(m_door);
+	//VERIFY2(m_door, make_string("object %s hasn't been registered as a door already", m_game_object->cName().c_str()));
+	if (m_door)
+		ai().doors().on_door_is_closed(m_door);
 }
 
 bool CScriptGameObject::is_door_locked_for_npc() const
 {
-    VERIFY2(m_door, make_string("object %s hasn't been registered as a door already", m_game_object->cName().c_str()));
-    return								ai().doors().is_door_locked(m_door);
+    //VERIFY2(m_door, make_string("object %s hasn't been registered as a door already", m_game_object->cName().c_str()));
+	if (!m_door)
+		return false;
+    return ai().doors().is_door_locked(m_door);
 }
 
 void CScriptGameObject::lock_door_for_npc()
 {
-    VERIFY2(m_door, make_string("object %s hasn't been registered as a door already", m_game_object->cName().c_str()));
-    ai().doors().lock_door(m_door);
+	//VERIFY2(m_door, make_string("object %s hasn't been registered as a door already", m_game_object->cName().c_str()));
+	if (m_door)
+		ai().doors().lock_door(m_door);
 }
 
 void CScriptGameObject::unlock_door_for_npc()
 {
-    VERIFY2(m_door, make_string("object %s hasn't been registered as a door already", m_game_object->cName().c_str()));
-    ai().doors().unlock_door(m_door);
+    //VERIFY2(m_door, make_string("object %s hasn't been registered as a door already", m_game_object->cName().c_str()));
+	if (m_door)
+		ai().doors().unlock_door(m_door);
 }
 
 bool CScriptGameObject::is_door_blocked_by_npc() const
 {
-    VERIFY2(m_door, make_string("object %s hasn't been registered as a door already", m_game_object->cName().c_str()));
-    return								ai().doors().is_door_blocked(m_door);
+    //VERIFY2(m_door, make_string("object %s hasn't been registered as a door already", m_game_object->cName().c_str()));
+	if (!m_door)
+		return false;
+    return ai().doors().is_door_blocked(m_door);
 }
 
 //Alundaio: Methods for exporting the ability to detach/attach addons for magazined weapons
@@ -1679,7 +1696,7 @@ bool CScriptGameObject::InstallUpgrade(LPCSTR upgrade)
 	if (!pSettings->section_exist(upgrade))
 		return false;
 
-	return item->install_upgrade(upgrade);
+	return ai().alife().inventory_upgrade_manager().upgrade_install(*item, upgrade, false);
 }
 
 bool CScriptGameObject::HasUpgrade(LPCSTR upgrade)
@@ -1712,12 +1729,6 @@ void CScriptGameObject::IterateInstalledUpgrades(luabind::functor<void> functor)
 	}
 }
 
-
-#include "inventory_item_impl.h"
-#include "inventory_item.h"
-#include "inventory.h"
-#include "xrserver_objects_alife_items.h"
-#include "./xrServerEntities/inventory_space.h"
 CScriptGameObject *CScriptGameObject::ItemOnBelt	(u32 item_id) const
 {
 	CInventoryOwner	*inventory_owner = smart_cast<CInventoryOwner*>(&object());

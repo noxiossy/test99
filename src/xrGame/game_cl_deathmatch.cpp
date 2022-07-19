@@ -21,7 +21,6 @@
 #include "ui/UIActorMenu.h"
 #include "weapon.h"
 
-#include "game_cl_base_weapon_usage_statistic.h"
 #include "reward_event_generator.h"
 
 #include "game_cl_deathmatch_snd_messages.h"
@@ -91,9 +90,6 @@ void game_cl_Deathmatch::SetGameUI(CUIGameCustom* uigame)
 
 CUIGameCustom* game_cl_Deathmatch::createGameUI()
 {
-	if (g_dedicated_server)
-		return NULL;
-
 	CLASS_ID clsid			= CLSID_GAME_UI_DEATHMATCH;
 	m_game_ui				= smart_cast<CUIGameDM*> ( NEW_INSTANCE ( clsid ) );
 	R_ASSERT				(m_game_ui);
@@ -305,9 +301,6 @@ BOOL game_cl_Deathmatch::CanCallInventoryMenu			()
 
 void game_cl_Deathmatch::SetCurrentBuyMenu	()	
 {
-	if (g_dedicated_server)
-		return;
-
 	if (!pCurBuyMenu)
 	{
 		pCurBuyMenu	= InitBuyMenu(GetBaseCostSect(), 0);
@@ -437,7 +430,6 @@ void game_cl_Deathmatch::OnConnected()
 	inherited::OnConnected				();
 	if (m_game_ui)
 	{
-		VERIFY(!g_dedicated_server);
 		m_game_ui = smart_cast<CUIGameDM*>	(CurrentGameUI());
 		m_game_ui->SetClGame				(this);
 	}
@@ -448,8 +440,6 @@ void game_cl_Deathmatch::shedule_Update			(u32 dt)
 	CStringTable st;
 
 	inherited::shedule_Update(dt);
-
-	if(g_dedicated_server)	return;
 
 	//fake	
 	if(m_game_ui)
@@ -1018,17 +1008,6 @@ void game_cl_Deathmatch::OnSpawn(CObject* pObj)
 			m_reward_generator->init_bone_groups(pActor);
 		}
 	};
-	if (smart_cast<CWeapon*>(pObj))
-	{
-		if (pObj->H_Parent())
-		{
-			game_PlayerState *ps = GetPlayerByGameID(pObj->H_Parent()->ID());
-			if (ps)
-			{
-				m_WeaponUsageStatistic->OnWeaponBought(ps, pObj->cNameSect().c_str());
-			}
-		}
-	}
 }
 
 void game_cl_Deathmatch::LoadSndMessages()

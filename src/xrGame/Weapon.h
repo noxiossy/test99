@@ -11,6 +11,7 @@
 #include "firedeps.h"
 #include "game_cl_single.h"
 #include "first_bullet_controller.h"
+#include "actor.h"
 
 #include "CameraRecoil.h"
 
@@ -24,6 +25,8 @@ class CUIWindow;
 class CBinocularsVision;
 class CNightVisionEffector;
 
+ENGINE_API extern float psHUD_FOV_def;
+
 class CWeapon : public CHudItemObject,
     public CShootingObject
 {
@@ -34,6 +37,7 @@ public:
     CWeapon();
     virtual					~CWeapon();
 
+	bool			bScopeIsHasTexture;
     // Generic
     virtual void			Load(LPCSTR section);
 
@@ -65,6 +69,9 @@ public:
     virtual void			renderable_Render();
     virtual void			render_hud_mode();
     virtual bool			need_renderable();
+
+	bool					IsReload			()	const		{	return GetState() == eReload;}
+	bool					IsFire				()	const		{	return GetState() == eFire;}
 
     virtual void			render_item_ui();
     virtual bool			render_item_ui_query();
@@ -114,6 +121,11 @@ public:
         eMisfire,
         eMagEmpty,
         eSwitch,
+	// mmccxvii: FWR code
+	//*
+		eTorch,
+		eFireMode,
+	//*
     };
     enum EWeaponSubStates
     {
@@ -163,9 +175,11 @@ public:
     bool IsScopeAttached() const;
     bool IsSilencerAttached() const;
 
-    virtual bool GrenadeLauncherAttachable();
-    virtual bool ScopeAttachable();
-    virtual bool SilencerAttachable();
+	bool			IsGrenadeMode() const;
+
+	virtual bool GrenadeLauncherAttachable() const;
+	virtual bool ScopeAttachable() const;
+	virtual bool SilencerAttachable() const;
 
     ALife::EWeaponAddonStatus	get_GrenadeLauncherStatus() const
     {
@@ -182,7 +196,7 @@ public:
 
     virtual bool UseScopeTexture()
     {
-        return true;
+		return bScopeIsHasTexture;
     };
 	
     //обновление видимости для косточек аддонов
@@ -194,11 +208,11 @@ public:
     //для отоброажения иконок апгрейдов в интерфейсе
     int	GetScopeX()
     {
-        return pSettings->r_s32(m_scopes[m_cur_scope], "scope_x");
+        return m_iScopeX;
     }
     int	GetScopeY()
     {
-        return pSettings->r_s32(m_scopes[m_cur_scope], "scope_y");
+        return m_iScopeY;
     }
     int	GetSilencerX()
     {
@@ -223,7 +237,7 @@ public:
     }
     const shared_str GetScopeName() const
     {
-        return pSettings->r_string(m_scopes[m_cur_scope], "scope_name");
+        return m_sScopeName;
     }
     const shared_str& GetSilencerName() const
     {
@@ -243,6 +257,23 @@ public:
     {
         m_flagsAddOnState = st;
     }//dont use!!! for buy menu only!!!
+
+    //названия секций подключаемых аддонов
+    shared_str		m_sScopeName;
+    std::vector<shared_str> m_allScopeNames;
+    shared_str		m_sSilencerName;
+    shared_str		m_sGrenadeLauncherName;
+
+	std::vector<shared_str> m_sWpn_scope_bones;
+	shared_str m_sWpn_silencer_bone;
+	shared_str m_sWpn_launcher_bone;
+	std::vector<shared_str> m_sHud_wpn_scope_bones;
+	shared_str m_sHud_wpn_silencer_bone;
+	shared_str m_sHud_wpn_launcher_bone;
+private:
+	std::vector<shared_str> hidden_bones;
+	std::vector<shared_str> hud_hidden_bones;
+
 protected:
     //состояние подключенных аддонов
     u8 m_flagsAddOnState;
@@ -251,11 +282,6 @@ protected:
     ALife::EWeaponAddonStatus	m_eScopeStatus;
     ALife::EWeaponAddonStatus	m_eSilencerStatus;
     ALife::EWeaponAddonStatus	m_eGrenadeLauncherStatus;
-
-    //названия секций подключаемых аддонов
-    shared_str		m_sScopeName;
-    shared_str		m_sSilencerName;
-    shared_str		m_sGrenadeLauncherName;
 
     //смещение иконов апгрейдов в инвентаре
     int	m_iScopeX, m_iScopeY;
@@ -309,7 +335,11 @@ public:
 
     bool			ZoomHideCrosshair()
     {
-        return m_zoom_params.m_bHideCrosshairInZoom || ZoomTexture();
+		auto* pA = smart_cast<CActor*>(H_Parent());
+		if (pA && pA->active_cam() == eacLookAt)
+			return false;
+
+		return (m_zoom_params.m_bHideCrosshairInZoom || ZoomTexture());
     }
 
     IC float				GetZoomFactor() const
@@ -321,14 +351,24 @@ public:
         m_zoom_params.m_fCurrentZoomFactor = f;
     }
 
+    float m_hud_fov_add_mod;
+
+    float m_nearwall_dist_max;
+    float m_nearwall_dist_min;
+    float m_nearwall_last_hud_fov;
+    float m_nearwall_target_hud_fov;
+    float m_nearwall_speed_mod;
+
+    float GetHudFov(); //--#SM+#--
+
     virtual	float			CurrentZoomFactor();
     //показывает, что оружие находится в соостоянии поворота для приближенного прицеливания
     bool			IsRotatingToZoom() const
     {
         return (m_zoom_params.m_fZoomRotationFactor < 1.f);
     }
-
-    virtual	u8				GetCurrentHudOffsetIdx();
+	
+	bool			IsRotatingFromZoom	() const		{	return (m_zoom_params.m_fZoomRotationFactor > 0.f); }
 
     virtual float				Weight() const;
     virtual	u32					Cost() const;
@@ -384,6 +424,13 @@ protected:
     virtual void			UpdateFireDependencies_internal();
     virtual void			UpdatePosition(const Fmatrix& transform);	//.
     virtual void			UpdateXForm();
+
+private:
+	float m_fLR_MovingFactor{}, m_fLookout_MovingFactor{};
+	Fvector m_strafe_offset[3][2]{}, m_lookout_offset[3][2]{};
+
+protected:
+	virtual	u8				GetCurrentHudOffsetIdx	() override;
     virtual void			UpdateHudAdditonal(Fmatrix&);
     IC		void			UpdateFireDependencies()
     {
@@ -428,7 +475,7 @@ protected:
     virtual void			SetDefaults();
 
     virtual bool			MovingAnimAllowedNow();
-    virtual void			OnStateSwitch(u32 S);
+    virtual void			OnStateSwitch(u32 S, u32 oldState);
     virtual void			OnAnimationEnd(u32 state);
 
     //трассирование полета пули
@@ -608,10 +655,6 @@ public:
         u8						cur_scope;
         */
 
-    DEFINE_VECTOR(shared_str, SCOPES_VECTOR, SCOPES_VECTOR_IT);
-    SCOPES_VECTOR			m_scopes;
-    u8						m_cur_scope;
-
     CWeaponAmmo*			m_pCurrentAmmo;
     u8						m_ammoType;
     //-	shared_str				m_ammoName; <== deleted
@@ -628,6 +671,9 @@ public:
     {
         return m_can_be_strapped;
     };
+
+	const decltype(m_magazine)& GetMagazine() { return m_magazine; };
+    float					GetMagazineWeight(const decltype(m_magazine)& mag) const;
 
 protected:
     u32						m_ef_main_weapon_type;

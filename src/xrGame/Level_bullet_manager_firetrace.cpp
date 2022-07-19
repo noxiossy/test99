@@ -15,7 +15,6 @@
 #include "Actor.h"
 #include "AI/Stalker/ai_stalker.h"
 #include "character_info.h"
-#include "game_cl_base_weapon_usage_statistic.h"
 #include "../xrcdb/xr_collide_defs.h"
 #include "../xrengine/xr_collide_form.h"
 #include "weapon.h"
@@ -53,9 +52,9 @@ BOOL CBulletManager::test_callback(const collide::ray_defs& rd, CObject* object,
 		ICollisionForm*	cform	= entity->collidable.model;
 		if ((NULL!=cform) && (cftObject==cform->Type())){
 			CActor* actor		= smart_cast<CActor*>(entity);
-				//CAI_Stalker* stalker= smart_cast<CAI_Stalker*>(entity);
-			// â êîãî ïîïàëè?
-				if (actor/* || stalker*/) {
+			//CAI_Stalker* stalker= smart_cast<CAI_Stalker*>(entity);
+			// в кого попали?
+			if (actor /*||stalker*/){
 				// попали в актера или сталкера
 				Fsphere S		= cform->getSphere();
 				entity->XFORM().transform_tiny	(S.P)	;
@@ -160,19 +159,15 @@ void CBulletManager::FireShotmark (SBullet* bullet, const Fvector& vDir, const F
 
 	if (R.O)
 	{
-/*  add_SkeletonWallmark not implemented now...
 		particle_dir		 = vDir;
 		particle_dir.invert	();
 
 		//на текущем актере отметок не ставим
-		if(Level().CurrentEntity() && Level().CurrentEntity()->ID() == R.O->ID()) return;
-
-		if (mtl_pair && !mtl_pair->m_pCollideMarks->empty() && ShowMark)
+		if ( !smart_cast<CActor*>( R.O ) && mtl_pair && !mtl_pair->m_pCollideMarks->empty() && ShowMark )
 		{
 			//добавить отметку на материале
 			Fvector p;
 			p.mad(bullet->bullet_pos,bullet->dir,R.range-0.01f);
-			if(!g_dedicated_server)
 				::Render->add_SkeletonWallmark	(	&R.O->renderable.xform, 
 													PKinematics(R.O->Visual()), 
 													&*mtl_pair->m_pCollideMarks,
@@ -180,7 +175,6 @@ void CBulletManager::FireShotmark (SBullet* bullet, const Fvector& vDir, const F
 													bullet->dir, 
 													bullet->wallmark_size);
 		}
-*/
 	} 
 	else 
 	{
@@ -259,8 +253,7 @@ void CBulletManager::DynamicObjectHit	(CBulletManager::_event& E)
 		}
 	}
 
-	if (g_clear) E.Repeated = false;
-	if (GameID() == eGameIDSingle) E.Repeated = false;
+	E.Repeated = false;
 	bool NeedShootmark = true;//!E.Repeated;
 	
 	if (smart_cast<CActor*>(E.R.O))
@@ -311,19 +304,6 @@ void CBulletManager::DynamicObjectHit	(CBulletManager::_event& E)
 	//отправить хит пораженному объекту
 	if (E.bullet.flags.allow_sendhit && !E.Repeated)
 	{
-		//-------------------------------------------------
-		bool AddStatistic = false;
-		if (GameID() != eGameIDSingle && E.bullet.flags.allow_sendhit && smart_cast<CActor*>(E.R.O)
-			&& Game().m_WeaponUsageStatistic->CollectData())
-		{
-			CActor* pActor = smart_cast<CActor*>(E.R.O);
-			if (pActor)// && pActor->g_Alive())
-			{
-				Game().m_WeaponUsageStatistic->OnBullet_Hit(&E.bullet, E.R.O->ID(), (s16)E.R.element, E.point);
-				AddStatistic = true;
-			};
-		};
-
 		SHit	Hit = SHit(	hit_param.power,
 							original_dir,
 							NULL,
@@ -334,7 +314,7 @@ void CBulletManager::DynamicObjectHit	(CBulletManager::_event& E)
 							E.bullet.armor_piercing,
 							E.bullet.flags.aim_bullet);
 
-		Hit.GenHeader(u16((AddStatistic)? GE_HIT_STATISTIC : GE_HIT)&0xffff, E.R.O->ID());
+		Hit.GenHeader(u16(GE_HIT)&0xffff, E.R.O->ID());
 		Hit.whoID			= E.bullet.parent_id;
 		Hit.weaponID		= E.bullet.weapon_id;
 		Hit.BulletID		= E.bullet.m_dwID;
@@ -461,11 +441,11 @@ bool CBulletManager::ObjectHit( SBullet_Hit* hit_res, SBullet* bullet, const Fve
 	random_dir		( tgt_dir, new_dir, deg2rad( 10.0f ) );
 	float ricoshet_factor = bullet->dir.dotproduct( tgt_dir );
 
-	float f			= Random.randF( 0.5f, 0.8f ); //(0.5f,1.f);
+	float f			= Random.randF( 0.0f, 0.05f );//( 0.5f, 0.8f ); //(0.5f,1.f);
 	if ( (f < ricoshet_factor) && !mtl->Flags.test(SGameMtl::flNoRicoshet) && bullet->flags.allow_ricochet )	
 	{
 		// уменьшение скорости полета в зависимости от угла падения пули (чем прямее угол, тем больше потеря)
-		bullet->flags.allow_ricochet = 0;
+		bullet->flags.allow_ricochet = 1;
 		float scale = 1.0f - _abs(bullet->dir.dotproduct(hit_normal)) * m_fCollisionEnergyMin;
 		clamp(scale, 0.0f, m_fCollisionEnergyMax);
 		speed_scale = scale;

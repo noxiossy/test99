@@ -135,10 +135,8 @@ void CMissile::OnHiddenItem()
 {
 
 //. -Hide
-	if(IsGameTypeSingle())
-		SwitchState			(eHiding);
-	else
-		SwitchState			(eHidden);
+	SwitchState			(eHiding);
+
 //-
 
 	inherited::OnHiddenItem	();
@@ -156,7 +154,7 @@ void CMissile::spawn_fake_missile()
 		CSE_Abstract		*object = Level().spawn_item(
 			*cNameSect(),
 			Position(),
-			(g_dedicated_server)?u32(-1):ai_location().level_vertex_id(),
+			ai_location().level_vertex_id(),
 			ID(),
 			true
 		);
@@ -256,9 +254,9 @@ void CMissile::shedule_Update(u32 dt)
 	} 
 }
 
-void CMissile::State(u32 state) 
+void CMissile::State(u32 state, u32 old_state)
 {
-	switch(GetState()) 
+	switch(state) 
 	{
 	case eShowing:
         {
@@ -274,8 +272,11 @@ void CMissile::State(u32 state)
 		{
 			if(H_Parent())
 			{
-				SetPending			(TRUE);
-				PlayHUDMotion		("anm_hide", TRUE, this, GetState());
+				if (old_state != eHiding)
+				{
+					SetPending(TRUE);
+					PlayHUDMotion("anm_hide", TRUE, this, GetState());
+				}
 			}
 		} break;
 	case eHidden:
@@ -322,11 +323,11 @@ void CMissile::State(u32 state)
 	}
 }
 
-void CMissile::OnStateSwitch	(u32 S)
+void CMissile::OnStateSwitch	(u32 S, u32 oldState)
 {
 	m_dwStateTime				= 0;
-	inherited::OnStateSwitch	(S);
-	State						(S);
+	inherited::OnStateSwitch	(S, oldState);
+	State                       (S, oldState);
 }
 
 
@@ -618,11 +619,6 @@ void CMissile::activate_physic_shell()
 {
 	if (!smart_cast<CMissile*>(H_Parent())) {
 		inherited::activate_physic_shell();
-		if(m_pPhysicsShell&&m_pPhysicsShell->isActive()&&!IsGameTypeSingle())
-		{
-				m_pPhysicsShell->add_ObjectContactCallback		(ExitContactCallback);
-				m_pPhysicsShell->set_CallbackData	(smart_cast<CPhysicsShellHolder*>(H_Root()));
-		}
 		return;
 	}
 

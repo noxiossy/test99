@@ -43,7 +43,7 @@ void CGrenade::Load(LPCSTR section)
 
 void CGrenade::Hit					(SHit* pHDS)
 {
-	if( ALife::eHitTypeExplosion==pHDS->hit_type && m_grenade_detonation_threshold_hit<pHDS->damage()&&CExplosive::Initiator()==u16(-1)) 
+	if( ALife::eHitTypeFireWound==pHDS->hit_type || ALife::eHitTypeExplosion==pHDS->hit_type || ALife::eHitTypeBurn==pHDS->hit_type )//&& m_grenade_detonation_threshold_hit<pHDS->damage()&&CExplosive::Initiator()==u16(-1)) 
 	{
 		CExplosive::SetCurrentParentID(pHDS->who->ID());
 		Destroy();
@@ -94,7 +94,7 @@ void CGrenade::OnH_A_Chield()
 	inherited::OnH_A_Chield				();
 }
 
-void CGrenade::State(u32 state) 
+void CGrenade::State(u32 state, u32 old_state) 
 {
 	switch (state)
 	{
@@ -124,7 +124,7 @@ void CGrenade::State(u32 state)
 			};
 		}break;
 	};
-	inherited::State( state );
+	inherited::State( state, old_state );
 }
 
 bool CGrenade::DropGrenade()
@@ -143,9 +143,12 @@ bool CGrenade::DropGrenade()
 }
 
 void CGrenade::DiscardState()
-{
-	if(IsGameTypeSingle() && (GetState()==eReady || GetState()==eThrow) )
-		OnStateSwitch(eIdle);
+{	
+	u32 state = GetState();
+	if (state==eReady || state==eThrow)
+	{
+		OnStateSwitch(eIdle, state);
+	}
 }
 
 void CGrenade::SendHiddenItem						()
@@ -277,8 +280,6 @@ void CGrenade::UpdateCL()
 {
 	inherited::UpdateCL			();
 	CExplosive::UpdateCL		();
-
-	if(!IsGameTypeSingle())	make_Interpolation();
 }
 
 

@@ -28,6 +28,7 @@ protected:
     ESoundTypes		m_eSoundEmptyClick;
     ESoundTypes		m_eSoundReload;
 #ifdef NEW_SOUNDS //AVO: new sounds go here
+	ESoundTypes		m_eSoundFireModes;
     ESoundTypes		m_eSoundReloadEmpty;
     ESoundTypes		m_eSoundReloadMisfire;
 #endif //-NEW_SOUNDS
@@ -45,13 +46,20 @@ protected:
     virtual void	switch2_Hiding();
     virtual void	switch2_Hidden();
     virtual void	switch2_Showing();
+	// mmccxvii: FWR code
+	//*
+	virtual void	switch2_Torch();
+	virtual void	OnSwitchTorch();
 
+	virtual void	switch2_FireMode();
+	virtual void	OnSwitchFireMode();
+	//*
     virtual void	OnShot();
 
     virtual void	OnEmptyClick();
 
     virtual void	OnAnimationEnd(u32 state);
-    virtual void	OnStateSwitch(u32 S);
+    virtual void	OnStateSwitch(u32 S, u32 oldState);
 
     virtual void	UpdateSounds();
 
@@ -76,6 +84,7 @@ public:
         return this;
     }
 
+	virtual bool    UseScopeTexture ();
     virtual void	SetDefaults();
     virtual void	FireStart();
     virtual void	FireEnd();
@@ -90,7 +99,6 @@ public:
 
     virtual bool	Attach(PIItem pIItem, bool b_send_event);
     virtual bool	Detach(const char* item_section_name, bool b_spawn_item);
-    bool	DetachScope(const char* item_section_name, bool b_spawn_item);
     virtual bool	CanAttach(PIItem pIItem);
     virtual bool	CanDetach(const char* item_section_name);
 
@@ -154,8 +162,8 @@ protected:
 public:
     virtual void	OnZoomIn();
     virtual void	OnZoomOut();
-    void	OnNextFireMode();
-    void	OnPrevFireMode();
+    //void	OnNextFireMode();
+    //void	OnPrevFireMode();
     bool	HasFireModes()
     {
         return m_bHasDifferentFireModes;
@@ -191,6 +199,11 @@ protected:
     virtual void	PlayReloadSound();
     virtual void	PlayAnimAim();
 
+	// mmccxvii: FWR code
+	//*
+	virtual void	PlayAnimSwitchTorch();
+	virtual void	PlayAnimSwitchFireMode();
+	//*
     virtual	int		ShotsFired()
     {
         return m_iShotNum;
@@ -204,6 +217,16 @@ protected:
         u16 parent_id,
         u16 weapon_id,
         bool send_hit);
+		
+	bool			ScopeRespawn		( PIItem );
+
+private:
+	// mmccxvii: FWR code
+	//*
+	bool m_bNextFireMode;
+	//*
+
+public:
     //AVO: for custom added sounds check if sound exists
     bool WeaponSoundExist(LPCSTR section, LPCSTR sound_name);
 

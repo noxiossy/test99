@@ -51,7 +51,6 @@ bool valid_object_id						(const CALifeSimulator *self, ALife::_OBJECT_ID object
 	return			(object_id != 0xffff);
 }
 
-#ifdef DEBUG
 CSE_ALifeDynamicObject *alife_object		(const CALifeSimulator *self, LPCSTR name)
 {
 	VERIFY			(self);
@@ -64,7 +63,7 @@ CSE_ALifeDynamicObject *alife_object		(const CALifeSimulator *self, LPCSTR name)
 	
 	return			(0);
 }
-#endif // #ifdef DEBUG
+
 
 CSE_ALifeDynamicObject *alife_object		(const CALifeSimulator *self, ALife::_OBJECT_ID id, bool no_assert)
 {

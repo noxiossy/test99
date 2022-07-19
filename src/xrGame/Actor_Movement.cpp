@@ -231,6 +231,8 @@ void CActor::g_cl_CheckControls(u32 mstate_wf, Fvector &vControlAccel, float &Ju
 			}
 		}
 
+		CWeapon* W = smart_cast<CWeapon*>(inventory().ActiveItem());
+		
 		if ((mstate_wf&mcSprint) && !CanSprint())
 			mstate_wf				&= ~mcSprint;
 
@@ -241,12 +243,19 @@ void CActor::g_cl_CheckControls(u32 mstate_wf, Fvector &vControlAccel, float &Ju
 			mstate_real|=mcSprint;
 		else
 			mstate_real&=~mcSprint;
-		if(!(mstate_real&(mcFwd|mcLStrafe|mcRStrafe))||mstate_real&(mcCrouch|mcClimb)|| !isActorAccelerated(mstate_wf, IsZoomAimingMode()))
+		if(!(mstate_real&(mcFwd|mcLStrafe|mcRStrafe))||mstate_real&(mcCrouch|mcClimb)|| !isActorAccelerated(mstate_wf, IsZoomAimingMode()) || W && W->GetState() == W->eFire)
 		{
 			mstate_real&=~mcSprint;
 			mstate_wishful&=~mcSprint;
 		}
 				
+		if (mstate_real & mcJump)
+		{
+			mstate_real &= ~mcSprint;
+			mstate_real &= ~mcFwd;
+			mstate_wishful &= ~mcFwd;
+		}
+		
 		// check player move state
 		if(mstate_real&mcAnyMove)
 		{
@@ -290,7 +299,7 @@ void CActor::g_cl_CheckControls(u32 mstate_wf, Fvector &vControlAccel, float &Ju
 		}//(mstate_real&mcAnyMove)
 	}//peOnGround || peAtWall
 
-	if(IsGameTypeSingle() && cam_eff_factor>EPS)
+	if(cam_eff_factor>EPS)
 	{
 	LPCSTR state_anm				= NULL;
 
@@ -312,12 +321,14 @@ void CActor::g_cl_CheckControls(u32 mstate_wf, Fvector &vControlAccel, float &Ju
 		if(state_anm)
 		{ //play moving cam effect
 			CActor*	control_entity		= static_cast_checked<CActor*>(Level().CurrentControlEntity());
-			R_ASSERT2					(control_entity, "current control entity is NULL");
-			CEffectorCam* ec			= control_entity->Cameras().GetCamEffector(eCEActorMoving);
-			if(NULL==ec)
+			if (control_entity)
 			{
-				string_path			eff_name;
-				xr_sprintf			(eff_name, sizeof(eff_name), "%s.anm", state_anm);
+				R_ASSERT2					(control_entity, "current control entity is NULL");
+				CEffectorCam* ec			= control_entity->Cameras().GetCamEffector(eCEActorMoving);
+				if(NULL==ec)
+				{
+					string_path			eff_name;
+					xr_sprintf			(eff_name, sizeof(eff_name), "%s.anm", state_anm);
 				string_path			ce_path;
 				string_path			anm_name;
 				strconcat			(sizeof(anm_name), anm_name, "camera_effects\\actor_move\\", eff_name);
@@ -326,12 +337,13 @@ void CActor::g_cl_CheckControls(u32 mstate_wf, Fvector &vControlAccel, float &Ju
 					CAnimatorCamLerpEffectorConst* e		= xr_new<CAnimatorCamLerpEffectorConst>();
 					float max_scale				= 70.0f;
 					float factor				= cam_eff_factor/max_scale;
-					e->SetFactor				(factor);
-					e->SetType					(eCEActorMoving);
-					e->SetHudAffect				(false);
-					e->SetCyclic				(false);
-					e->Start					(anm_name);
-					control_entity->Cameras().AddCamEffector(e);
+						e->SetFactor				(factor);
+						e->SetType					(eCEActorMoving);
+						e->SetHudAffect				(false);
+						e->SetCyclic				(false);
+						e->Start					(anm_name);
+						control_entity->Cameras().AddCamEffector(e);
+					}
 				}
 			}
 		}
@@ -405,9 +417,10 @@ void CActor::g_Orientate	(u32 mstate_rl, float dt)
 		if( (mstate_rl&mcLLookout) && (mstate_rl&mcRLookout) )
 			tgt_roll	= 0.0f;
 	}
-	if (!fsimilar(tgt_roll,r_torso_tgt_roll,EPS)){
-		angle_lerp		(r_torso_tgt_roll,tgt_roll,PI_MUL_2,dt);
-		r_torso_tgt_roll= angle_normalize_signed(r_torso_tgt_roll);
+	if (!fsimilar(tgt_roll,r_torso_tgt_roll,EPS))
+	{
+		r_torso_tgt_roll = angle_inertion_var(r_torso_tgt_roll, tgt_roll, 0.f, CurrentHeight * PI_MUL_2, PI_DIV_2, dt);
+		r_torso_tgt_roll = angle_normalize_signed(r_torso_tgt_roll);
 	}
 }
 bool CActor::g_LadderOrient()
