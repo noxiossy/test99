@@ -108,6 +108,7 @@ static class cl_sun_shafts_intensity : public R_constant_setup
 }	binder_sun_shafts_intensity;
 
 extern ENGINE_API BOOL r2_sun_static;
+extern ENGINE_API BOOL r2_simple_static;
 extern ENGINE_API BOOL r2_advanced_pp;	//	advanced post process and effects
 //////////////////////////////////////////////////////////////////////////
 // Just two static storage
@@ -214,7 +215,8 @@ void					CRender::create					()
 		o.fp16_blend	= FALSE;
 	}
 
-	VERIFY2				(o.mrt && (HW.Caps.raster.dwInstructions>=256),"Hardware doesn't meet minimum feature-level");
+	CHECK_OR_EXIT			(o.mrt && (HW.Caps.raster.dwInstructions>=256),"Hardware doesn't meet minimum feature-level");
+
 	if (o.mrtmixdepth)		o.albedo_wo		= FALSE	;
 	else if (o.fp16_blend)	o.albedo_wo		= FALSE	;
 	else					o.albedo_wo		= TRUE	;
@@ -224,14 +226,13 @@ void					CRender::create					()
 	// if hardware support early stencil (>= GF 8xxx) stencil reset trick only
 	// slows down.
 	o.nvstencil			= FALSE;
-	if ((HW.Caps.id_vendor==0x10DE)&&(HW.Caps.id_device>=0x40))	
+	if (!strstr(Core.Params, "-nonvs") && (HW.Caps.id_vendor == 0x10DE) && (HW.Caps.id_device >= 0x40))
 	{
 		//o.nvstencil = HW.support	((D3DFORMAT)MAKEFOURCC('R','A','W','Z'), D3DRTYPE_SURFACE, 0);
 		//o.nvstencil = TRUE;
 		o.nvstencil = ( S_OK==HW.pD3D->CheckDeviceFormat(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, D3DFMT_X8R8G8B8 , 0, D3DRTYPE_TEXTURE, (D3DFORMAT MAKEFOURCC('R','A','W','Z'))) );
 	}
-
-	if (strstr(Core.Params,"-nonvs"))		o.nvstencil	= FALSE;
+	if (o.nvstencil)	Msg("* NVStencil supported and used");
 
 	// nv-dbt
 	o.nvdbt				= HW.support	((D3DFORMAT)MAKEFOURCC('N','V','D','B'), D3DRTYPE_SURFACE, 0);
@@ -266,6 +267,7 @@ void					CRender::create					()
 	o.sunfilter			= (strstr(Core.Params,"-sunfilter"))?	TRUE	:FALSE	;
 	//.	o.sunstatic			= (strstr(Core.Params,"-sunstatic"))?	TRUE	:FALSE	;
 	o.sunstatic			= r2_sun_static;
+	o.simplestatic		= r2_simple_static;
 	o.advancedpp		= r2_advanced_pp;
 	o.sjitter			= (strstr(Core.Params,"-sjitter"))?		TRUE	:FALSE	;
 	o.depth16			= (strstr(Core.Params,"-depth16"))?		TRUE	:FALSE	;
@@ -334,6 +336,7 @@ void					CRender::destroy				()
 	r_dsgraph_destroy			();
 }
 
+extern u32 reset_frame;
 void CRender::reset_begin()
 {
 	// Update incremental shadowmap-visibility solver
@@ -352,6 +355,7 @@ void CRender::reset_begin()
 		Lights_LastFrame.clear	();
 	}
 
+	reset_frame = Device.dwFrame;
     //AVO: let's reload details while changed details options on vid_restart
     if (b_loaded && ((dm_current_size != dm_size) || (ps_r__Detail_density != ps_current_detail_density)))
     {
@@ -823,6 +827,12 @@ HRESULT	CRender::shader_compile			(
 	}
 	sh_name[len]='0'+char(o.sunstatic); ++len;
 
+	if (o.simplestatic)		{
+		defines[def_it].Name		=	"USE_R2_SIMPLE_STATIC";
+		defines[def_it].Definition	=	"1";
+		def_it						++	;
+	}
+	sh_name[len]='0'+char(o.simplestatic); ++len;
 	if (o.forcegloss)		{
 		xr_sprintf						(c_gloss,"%f",o.forcegloss_v);
 		defines[def_it].Name		=	"FORCE_GLOSS";

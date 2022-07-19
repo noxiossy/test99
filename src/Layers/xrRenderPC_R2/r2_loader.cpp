@@ -52,7 +52,7 @@ void CRender::level_Load(IReader* fs)
 	Wallmarks					= xr_new<CWallmarksEngine>	();
 	Details						= xr_new<CDetailManager>	();
 
-	if	(!g_dedicated_server)	{
+	{
 		// VB,IB,SWI
 //		g_pGamePersistent->LoadTitle("st_loading_geometry");
 		g_pGamePersistent->LoadTitle();
@@ -216,12 +216,13 @@ void CRender::LoadBuffers		(CStreamReader *base_fs,	BOOL _alternative)
 		u32 count				= fs->r_u32();
 		_DC.resize				(count);
 		_VB.resize				(count);
+
+		// decl
+		const u32 buffer_size = (MAXD3DDECLLENGTH + 1) * sizeof(D3DVERTEXELEMENT9);
+		auto* dcl = (D3DVERTEXELEMENT9*)_alloca(buffer_size);
+
 		for (u32 i=0; i<count; i++)
 		{
-			// decl
-//			D3DVERTEXELEMENT9*	dcl		= (D3DVERTEXELEMENT9*) fs().pointer();
-			u32					buffer_size = (MAXD3DDECLLENGTH+1)*sizeof(D3DVERTEXELEMENT9);
-			D3DVERTEXELEMENT9	*dcl = (D3DVERTEXELEMENT9*)_alloca(buffer_size);
 			fs->r				(dcl,buffer_size);
 			fs->advance			(-(int)buffer_size);
 

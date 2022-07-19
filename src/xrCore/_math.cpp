@@ -203,7 +203,7 @@ void Detect()
     }
     qpc_overhead /= 256;
 
-    SetPriorityClass(GetCurrentProcess(), NORMAL_PRIORITY_CLASS);
+	SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
 
     clk_per_second -= clk_overhead;
     clk_per_milisec = clk_per_second / 1000;

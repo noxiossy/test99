@@ -227,6 +227,11 @@ void	CRenderTarget::phase_combine	()
 	BOOL	PP_Complex		= u_need_PP	() | (BOOL)RImplementation.m_bMakeAsyncSS;
 	if (_menu_pp)			PP_Complex	= FALSE;
 
+	// Postprocess anti-aliasing
+	if (ps_r_pp_aa_mode)
+		PhaseAA();
+
+
 	// Combine everything + perform AA
 	if		(PP_Complex)	u_setrt		( rt_Color,0,0,HW.pBaseZB );			// LDR RT
 	else					u_setrt		( Device.dwWidth,Device.dwHeight,HW.pBaseRT,NULL,NULL,HW.pBaseZB);
@@ -268,11 +273,7 @@ void	CRenderTarget::phase_combine	()
 		vDofKernel.mul(ps_r2_dof_kernel_size);
 
 		// Draw COLOR
-		if (ps_r2_ls_flags.test(R2FLAG_AA))			RCache.set_Element	(s_combine->E[bDistort?3:1]);	// look at blender_combine.cpp
-		else										RCache.set_Element	(s_combine->E[bDistort?4:2]);	// look at blender_combine.cpp
-		RCache.set_c				("e_barrier",	ps_r2_aa_barier.x,	ps_r2_aa_barier.y,	ps_r2_aa_barier.z,	0);
-		RCache.set_c				("e_weights",	ps_r2_aa_weight.x,	ps_r2_aa_weight.y,	ps_r2_aa_weight.z,	0);
-		RCache.set_c				("e_kernel",	ps_r2_aa_kernel,	ps_r2_aa_kernel,	ps_r2_aa_kernel,	0);
+		RCache.set_Element(s_combine->E[bDistort ? 4 : 2]);	// look at blender_combine.cpp
 		RCache.set_c				("m_current",	m_current);
 		RCache.set_c				("m_previous",	m_previous);
 		RCache.set_c				("m_blur",		m_blur_scale.x,m_blur_scale.y, 0,0);
