@@ -32,8 +32,8 @@ void fix_texture_name(LPSTR fn)
 template <class T>
 BOOL	reclaim		(xr_vector<T*>& vec, const T* ptr)
 {
-	typename xr_vector<T*>::iterator it	= vec.begin	();
-	typename xr_vector<T*>::iterator end	= vec.end	();
+	auto it = vec.begin();
+	auto end = vec.end();
 	for (; it!=end; it++)
 		if (*it == ptr)	{ vec.erase	(it); return TRUE; }
 		return FALSE;
@@ -406,6 +406,7 @@ void	CResourceManager::_DumpMemoryUsage		()
 	}
 
 	// dump
+	if (Core.ParamFlags.test(Core.verboselog))
 	{
 		xr_multimap<u32,std::pair<u32,shared_str> >::iterator I = mtex.begin	();
 		xr_multimap<u32,std::pair<u32,shared_str> >::iterator E = mtex.end		();
