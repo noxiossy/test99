@@ -680,7 +680,6 @@
     <ClCompile Include="xrMemory_subst_msvc.cpp" />
     <ClCompile Include="xrsharedmem.cpp" />
     <ClCompile Include="xrstring.cpp" />
-    <ClCompile Include="xrSyncronize.cpp" />
     <ClCompile Include="Xr_ini.cpp" />
     <ClCompile Include="xr_shared.cpp" />
     <ClCompile Include="xr_trims.cpp" />
@@ -800,7 +799,6 @@
     <ClInclude Include="_std_extensions.h" />
     <ClInclude Include="_stl_extensions.h" />
     <ClInclude Include="_types.h" />
-    <ClInclude Include="_type_traits.h" />
     <ClInclude Include="_vector2.h" />
     <ClInclude Include="_vector3d.h" />
     <ClInclude Include="_vector3d_ext.h" />
