@@ -76,24 +76,17 @@ void CUIPdaWnd::Init()
 	m_btn_close				= UIHelper::Create3tButton( uiXml, "close_button", this );
 	m_hint_wnd				= UIHelper::CreateHint( uiXml, "hint_wnd" );
 
+	pUITaskWnd					= xr_new<CUITaskWnd>();
+	pUITaskWnd->hint_wnd		= m_hint_wnd;
+	pUITaskWnd->Init			();
 
-	if ( IsGameTypeSingle() )
-	{
-		pUITaskWnd					= xr_new<CUITaskWnd>();
-		pUITaskWnd->hint_wnd		= m_hint_wnd;
-		pUITaskWnd->Init			();
-
-//-		pUIFactionWarWnd				= xr_new<CUIFactionWarWnd>();
-//-		pUIFactionWarWnd->hint_wnd		= m_hint_wnd;
 //-		pUIFactionWarWnd->Init			();
 
-		pUIRankingWnd					= xr_new<CUIRankingWnd>();
-		pUIRankingWnd->Init				();
+	pUIRankingWnd					= xr_new<CUIRankingWnd>();
+	pUIRankingWnd->Init				();
 
-		pUILogsWnd						= xr_new<CUILogsWnd>();
-		pUILogsWnd->Init				();
-
-	}
+	pUILogsWnd						= xr_new<CUILogsWnd>();
+	pUILogsWnd->Init				();
 
 	UITabControl					= xr_new<CUITabControl>();
 	UITabControl->SetAutoDelete		(true);
@@ -174,7 +167,7 @@ void CUIPdaWnd::Update()
 
 	m_clock->TextItemControl().SetText(InventoryUtilities::GetGameTimeAsString(InventoryUtilities::etpTimeToMinutes).c_str());
 
-	Device.seqParallel.push_back	(fastdelegate::FastDelegate0<>(pUILogsWnd,&CUILogsWnd::PerformWork));
+    pUILogsWnd->PerformWork();
 }
 
 void CUIPdaWnd::SetActiveSubdialog(const shared_str& section)
@@ -344,13 +337,14 @@ void RearrangeTabButtons(CUITabControl* pTab)
 
 bool CUIPdaWnd::OnKeyboardAction(int dik, EUIMessages keyboard_action)
 {
-	if ( is_binded(kACTIVE_JOBS, dik) )
+	if (WINDOW_KEY_PRESSED == keyboard_action && IsShown())
 	{
-		if ( WINDOW_KEY_PRESSED == keyboard_action )
+		if (is_binded(kACTIVE_JOBS, dik))
+		{
 			HideDialog();
-
-		return true;
-	}	
+			return true;
+		}
+	}
 
 	return inherited::OnKeyboardAction(dik,keyboard_action);
 }

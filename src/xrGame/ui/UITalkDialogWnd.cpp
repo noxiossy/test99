@@ -14,6 +14,7 @@
 #include "../actor.h"
 #include "../alife_registry_wrappers.h"
 #include "dinput.h"
+#include "UIHelper.h"
 
 #define				TALK_XML				"talk.xml"
 
@@ -30,36 +31,34 @@ CUITalkDialogWnd::~CUITalkDialogWnd()
 
 void CUITalkDialogWnd::InitTalkDialogWnd()
 {
-	m_uiXml						= xr_new<CUIXml>();
-	m_uiXml->Load				(CONFIG_PATH, UI_PATH, TALK_XML);
+	m_uiXml = xr_new<CUIXml>();
+	m_uiXml->Load(CONFIG_PATH, UI_PATH, TALK_XML);
 	CUIXmlInit					ml_init;
 
-	CUIXmlInit::InitWindow		(*m_uiXml, "main", 0, this);
+	CUIXmlInit::InitWindow(*m_uiXml, "main", 0, this);
 
-//	CUIXmlInit::InitStatic		(*m_uiXml, "right_character_icon", 0, &UIOurIcon);
+	CUIXmlInit::InitStatic(*m_uiXml, "right_character_icon", 0, &UIOurIcon);
 
-//	CUIXmlInit::InitStatic		(*m_uiXml, "left_character_icon", 0, &UIOthersIcon);
+	CUIXmlInit::InitStatic(*m_uiXml, "left_character_icon", 0, &UIOthersIcon);
 
-//	UIOurIcon.AttachChild		(&UICharacterInfoLeft);
-//	UICharacterInfoLeft.InitCharacterInfo(Fvector2().set(0,0), UIOurIcon.GetWndSize(), "talk_character.xml");
+	UIOurIcon.AttachChild(&UICharacterInfoLeft);
+	UICharacterInfoLeft.InitCharacterInfo(Fvector2().set(0, 0), UIOurIcon.GetWndSize(), "talk_character.xml");
 
-//	UIOthersIcon.AttachChild	(&UICharacterInfoRight);
-//	UICharacterInfoRight.InitCharacterInfo(Fvector2().set(0,0), UIOthersIcon.GetWndSize(), "talk_character.xml");
+	UIOthersIcon.AttachChild(&UICharacterInfoRight);
+	UICharacterInfoRight.InitCharacterInfo(Fvector2().set(0, 0), UIOthersIcon.GetWndSize(), "talk_character.xml");
 
-//	AttachChild					(&UIOurIcon);
-//	AttachChild					(&UIOthersIcon);
+	AttachChild(&UIOurIcon);
+	AttachChild(&UIOthersIcon);
 
 	// Фрейм с нащими фразами
-//	AttachChild					(&UIDialogFrameBottom);
-//	CUIXmlInit::InitStatic		(*m_uiXml, "frame_bottom", 0, &UIDialogFrameBottom);
+	UIDialogFrameBottom			= UIHelper::CreateStatic	( *m_uiXml, "frame_bottom", this );
 
 	//основной фрейм диалога
-//	AttachChild					(&UIDialogFrameTop);
-//	CUIXmlInit::InitStatic		(*m_uiXml, "frame_top", 0, &UIDialogFrameTop);
+	UIDialogFrameTop			= UIHelper::CreateStatic	( *m_uiXml, "frame_top", this );
 
 
 	//Ответы
-	UIAnswersList				= xr_new<CUIScrollView>();
+	UIAnswersList = xr_new<CUIScrollView>();
 	UIAnswersList->SetAutoDelete(true);
 //	UIDialogFrameTop.AttachChild(UIAnswersList);
 	AttachChild(UIAnswersList);
@@ -175,19 +174,19 @@ void CUITalkDialogWnd::ClearQuestions()
 
 void CUITalkDialogWnd::AddQuestion(LPCSTR str, LPCSTR value, int number, bool b_finalizer)
 {
-	CUIQuestionItem* itm			= xr_new<CUIQuestionItem>(m_uiXml,"question_item");
-	itm->Init						(value, str);
+	CUIQuestionItem* itm = xr_new<CUIQuestionItem>(m_uiXml, "question_item");
+	itm->Init(value, str);
 	++number; //zero-based index
-	if(number<=10)
+	if (number <= 20)
 	{
 		string16 buff;
-		xr_sprintf						(buff, "%d.", (number==10)?0:number);
-		itm->m_num_text->SetText		(buff);
-		itm->m_text->SetAccelerator		(DIK_ESCAPE+number, 0);
+		xr_sprintf(buff, "%d.", (number == 20) ? 0 : number);
+		itm->m_num_text->SetText(buff);
+		itm->m_text->SetAccelerator(DIK_ESCAPE + number, 0);
 	}
-	if(b_finalizer)
+	if (b_finalizer)
 	{
-		itm->m_text->SetAccelerator		(kQUIT, 2);
+		itm->m_text->SetAccelerator(kQUIT, 2);
 		itm->m_text->SetAccelerator		(kUSE, 3);
 	}
 
@@ -241,14 +240,14 @@ void CUITalkDialogWnd::AddIconedAnswer(LPCSTR caption, LPCSTR text, LPCSTR textu
 
 void CUITalkDialogWnd::SetOsoznanieMode(bool b)
 {
-//	UIOurIcon.Show		(!b);
-//	UIOthersIcon.Show	(!b);
+	UIOurIcon.Show(!b);
+	UIOthersIcon.Show(!b);
 
-	UIAnswersList->Show	(!b);
-//	UIDialogFrameTop.Show (!b);
+	UIAnswersList->Show(!b);
+	UIDialogFrameTop->Show (!b);
 
 	UIToTradeButton.Show(!b);
-	if ( mechanic_mode )
+	if (mechanic_mode)
 	{
 		UIToTradeButton.m_hint_text = "ui_st_upgrade_hint";
 		UIToTradeButton.TextItemControl()->SetTextST( "ui_st_upgrade" );

@@ -839,7 +839,7 @@ void CUIMainIngameWnd::DrawMainIndicatorsForInventory()
 	if(!pActor)
 		return;
 
-	UpdateQuickSlots();
+/*	UpdateQuickSlots();
 	UpdateBoosterIndicators(pActor->conditions().GetCurBoosterInfluences());
 
 	for(int i=0;i<4;i++)
@@ -898,7 +898,7 @@ void CUIMainIngameWnd::DrawMainIndicatorsForInventory()
 		m_ind_boost_rad->Draw();
 	}
 
-	m_ui_hud_states->DrawZoneIndicators();
+	m_ui_hud_states->DrawZoneIndicators();*/
 }
 
 void CUIMainIngameWnd::UpdateBoosterIndicators(const xr_map<EBoostParams, SBooster> influences)

@@ -44,17 +44,10 @@ void CUIActorMenu::SetActor(CInventoryOwner* io)
 	m_last_time			= Device.dwTimeGlobal;
 	m_pActorInvOwner	= io;
 	
-	if ( IsGameTypeSingle() )
-	{
-		if ( io )
-			m_ActorCharacterInfo->InitCharacter	(m_pActorInvOwner->object_id());
-		else
-			m_ActorCharacterInfo->ClearInfo();
-	}
+	if ( io )
+		m_ActorCharacterInfo->InitCharacter	(m_pActorInvOwner->object_id());
 	else
-	{
-		UpdateActorMP();
-	}
+		m_ActorCharacterInfo->ClearInfo();
 }
 
 void CUIActorMenu::SetPartner(CInventoryOwner* io)
@@ -188,11 +181,14 @@ void CUIActorMenu::Show(bool status)
 		SetMenuMode							(mmUndefined);
 	}
 	m_ActorStateInfo->Show					(status);
+
+	CActor *pActor = smart_cast<CActor*>(Level().CurrentEntity());
+	if (pActor) pActor->RepackAmmo();
 }
 
 void CUIActorMenu::Draw()
 {
-	CurrentGameUI()->UIMainIngameWnd->DrawZoneMap();
+	//CurrentGameUI()->UIMainIngameWnd->DrawZoneMap();
 	CurrentGameUI()->UIMainIngameWnd->DrawMainIndicatorsForInventory();
 
 	inherited::Draw	();
@@ -214,7 +210,7 @@ void CUIActorMenu::Update()
 	case mmInventory:
 		{
 //			m_clock_value->TextItemControl()->SetText( InventoryUtilities::GetGameTimeAsString( InventoryUtilities::etpTimeToMinutes ).c_str() );
-			CurrentGameUI()->UIMainIngameWnd->UpdateZoneMap();
+			//CurrentGameUI()->UIMainIngameWnd->UpdateZoneMap();
 			break;
 		}
 	case mmTrade:
@@ -239,7 +235,8 @@ void CUIActorMenu::Update()
 	}
 	
 	inherited::Update();
-	m_ItemInfo->Update();
+	if (m_ItemInfo->CurrentItem())
+		m_ItemInfo->Update();
 	m_hint_wnd->Update();
 }
 
@@ -365,7 +362,7 @@ void CUIActorMenu::SetCurrentItem(CUICellItem* itm)
 
 void CUIActorMenu::InfoCurItem( CUICellItem* cell_item )
 {
-	if ( !cell_item )
+	if ( !cell_item || !cell_item->m_pData )
 	{
 		m_ItemInfo->InitItem( NULL );
 		return;
@@ -510,12 +507,25 @@ void CUIActorMenu::highlight_item_slot(CUICellItem* cell_item)
 
 	u16 slot_id = item->BaseSlot();
 
-	if (weapon && (slot_id == INV_SLOT_2 || slot_id == INV_SLOT_3))
+#ifdef EQUAL_WEAPONS_SLOTS
+	if (weapon && ((slot_id == INV_SLOT_2) || (slot_id == INV_SLOT_3)))
 	{
 		m_InvSlot2Highlight->Show(true);
 		m_InvSlot3Highlight->Show(true);
 		return;
 	}
+#else
+	if (weapon && (slot_id == INV_SLOT_2))
+	{
+		m_InvSlot2Highlight->Show(true);
+		return;
+	}
+	if (weapon && (slot_id == INV_SLOT_3))
+	{
+		m_InvSlot3Highlight->Show(true);
+		return;
+	}
+#endif
 	if(helmet && slot_id == HELMET_SLOT)
 	{
 		m_HelmetSlotHighlight->Show(true);
@@ -862,6 +872,7 @@ bool CUIActorMenu::CanSetItemToList(PIItem item, CUIDragDropListEx* l, u16& ret_
 		return		true;
 	}
 
+#ifdef EQUAL_WEAPONS_SLOTS
 	if(item_slot==INV_SLOT_3 && l==m_pInventoryPistolList)
 	{
 		ret_slot	= INV_SLOT_2;
@@ -873,6 +884,7 @@ bool CUIActorMenu::CanSetItemToList(PIItem item, CUIDragDropListEx* l, u16& ret_
 		ret_slot	= INV_SLOT_3;
 		return		true;
 	}
+#endif
 
 	return false;
 }
@@ -881,26 +893,26 @@ void CUIActorMenu::UpdateConditionProgressBars()
 	PIItem itm = m_pActorInvOwner->inventory().ItemFromSlot(INV_SLOT_2);
 	if(itm)
 	{
-		m_WeaponSlot1_progress->SetProgressPos(iCeil(itm->GetCondition()*15.0f)/15.0f);
+		m_WeaponSlot1_progress->SetProgressPos(iCeil(itm->GetCondition()*10.0f)/10.0f);
 	}
 	else
 		m_WeaponSlot1_progress->SetProgressPos(0);
 
 	itm = m_pActorInvOwner->inventory().ItemFromSlot(INV_SLOT_3);
 	if(itm)
-		m_WeaponSlot2_progress->SetProgressPos(iCeil(itm->GetCondition()*15.0f)/15.0f);
+		m_WeaponSlot2_progress->SetProgressPos(iCeil(itm->GetCondition()*10.0f)/10.0f);
 	else
 		m_WeaponSlot2_progress->SetProgressPos(0);
 
 	itm = m_pActorInvOwner->inventory().ItemFromSlot(OUTFIT_SLOT);
 	if(itm)
-		m_Outfit_progress->SetProgressPos(iCeil(itm->GetCondition()*15.0f)/15.0f);
+		m_Outfit_progress->SetProgressPos(iCeil(itm->GetCondition()*10.0f)/10.0f);
 	else
 		m_Outfit_progress->SetProgressPos(0);
 
 	itm = m_pActorInvOwner->inventory().ItemFromSlot(HELMET_SLOT);
 	if(itm)
-		m_Helmet_progress->SetProgressPos(iCeil(itm->GetCondition()*15.0f)/15.0f);
+		m_Helmet_progress->SetProgressPos(iCeil(itm->GetCondition()*10.0f)/10.0f);
 	else
 		m_Helmet_progress->SetProgressPos(0);
 

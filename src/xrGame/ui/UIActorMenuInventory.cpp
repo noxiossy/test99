@@ -29,7 +29,7 @@
 #include "../CustomOutfit.h"
 #include "../ActorHelmet.h"
 #include "../UICursor.h"
-#include "../MPPlayersBag.h"
+
 #include "../player_hud.h"
 #include "../CustomDetector.h"
 #include "../PDA.h"
@@ -128,8 +128,6 @@ void CUIActorMenu::SendEvent_Item_Eat(PIItem pItem, u16 recipient)
 void CUIActorMenu::SendEvent_Item_Drop(PIItem pItem, u16 recipient)
 {
 	R_ASSERT(pItem->parent_id()==recipient);
-	if (!IsGameTypeSingle())
-		pItem->DenyTrade();
 	//pItem->SetDropManual			(TRUE);
 	NET_Packet					P;
 	pItem->object().u_EventGen	(P,GE_OWNERSHIP_REJECT,pItem->parent_id());
@@ -334,9 +332,6 @@ void CUIActorMenu::OnInventoryAction(PIItem pItem, u16 action_type)
 					CUIDragDropListEx* curr = all_lists[i];
 					if(RemoveItemFromList(curr, pItem))
 					{
-#ifndef MASTER_GOLD
-						Msg("all ok. item [%d] removed from list", pItem->object_id());
-#endif // #ifndef MASTER_GOLD
 						break;
 					}
 					++i;
@@ -395,7 +390,10 @@ void CUIActorMenu::InitCellForSlot( u16 slot_idx )
 		return;
 	}
 
-	CUIDragDropListEx* curr_list	= GetSlotList( slot_idx );
+	CUIDragDropListEx* curr_list = GetSlotList( slot_idx );
+	if (!curr_list)
+		return;
+
 	CUICellItem* cell_item			= create_cell_item( item );
 	curr_list->SetItem( cell_item );
 	if ( m_currMenuMode == mmTrade && m_pPartnerInvOwner )
@@ -467,10 +465,6 @@ void CUIActorMenu::InitInventoryContents(CUIDragDropListEx* pBagList)
 	ite = ruck_list.end();
 	for ( ; itb != ite; ++itb )
 	{
-		CMPPlayersBag* bag = smart_cast<CMPPlayersBag*>( &(*itb)->object() );
-		if ( bag )
-			continue;
-
 		CUICellItem* itm = create_cell_item( *itb );
 		curr_list->SetItem(itm);
 		if (m_currMenuMode == mmTrade && m_pPartnerInvOwner)
@@ -502,10 +496,6 @@ bool CUIActorMenu::TryActiveSlot(CUICellItem* itm)
 		}
 		SendEvent_ActivateSlot( slot, m_pActorInvOwner->object_id() );
 		return true;
-	}
-	if ( slot == DETECTOR_SLOT )
-	{
-
 	}
 	return false;
 }
@@ -585,6 +575,9 @@ bool CUIActorMenu::ToSlot(CUICellItem* itm, bool force_place, u16 slot_id)
 			old_owner->SetItem(child);
 		}
 
+		if (!new_owner->CanSetItem(i))
+			return ToSlot(i, true, slot_id);
+		
 		new_owner->SetItem					(i);
 
 		SendEvent_Item2Slot					(iitem, m_pActorInvOwner->object_id(), slot_id);
@@ -606,11 +599,13 @@ bool CUIActorMenu::ToSlot(CUICellItem* itm, bool force_place, u16 slot_id)
 		if ( m_pActorInvOwner->inventory().SlotIsPersistent(slot_id) && slot_id != DETECTOR_SLOT  )
 			return false;
 
+#ifdef EQUAL_WEAPONS_SLOTS
 		if ( slot_id == INV_SLOT_2 && m_pActorInvOwner->inventory().CanPutInSlot(iitem, INV_SLOT_3))
 			return ToSlot(itm, force_place, INV_SLOT_3);
 
 		if ( slot_id == INV_SLOT_3 && m_pActorInvOwner->inventory().CanPutInSlot(iitem, INV_SLOT_2))
 			return ToSlot(itm, force_place, INV_SLOT_2);
+#endif
 
 		CUIDragDropListEx* slot_list		= GetSlotList(slot_id);
 		if (!slot_list)
@@ -879,6 +874,9 @@ bool CUIActorMenu::ToQuickSlot(CUICellItem* itm)
 	u8 slot_idx = u8(m_pQuickSlot->PickCell(GetUICursor().GetCursorPosition()).x);
 	if(slot_idx==255)
 		return false;
+	
+	if (!m_pQuickSlot->CanSetItem(itm))
+		return false;
 
 	m_pQuickSlot->SetItem(create_cell_item(iitem), GetUICursor().GetCursorPosition());
 	xr_strcpy(ACTOR_DEFS::g_quick_use_slots[slot_idx], iitem->m_section_id.c_str());
@@ -1068,7 +1066,7 @@ void CUIActorMenu::PropertiesBoxForWeapon( CUICellItem* cell_item, PIItem item, 
 		{
 		}
 	}
-	if ( smart_cast<CWeaponMagazined*>(pWeapon) && IsGameTypeSingle() )
+	if ( smart_cast<CWeaponMagazined*>(pWeapon) )
 	{
 		bool b = ( pWeapon->GetAmmoElapsed() !=0 );
 		if ( !b )

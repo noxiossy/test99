@@ -62,6 +62,10 @@ void CUIActorMenu::InitTradeMode()
 	m_partner_trade->StartTradeEx	( m_pActorInvOwner );
 
 	UpdatePrices();
+
+	CActor *pActor = smart_cast<CActor*>(Level().CurrentEntity());
+	if (pActor) pActor->RepackAmmo();
+
 }
 bool is_item_in_list(CUIDragDropListEx* pList, PIItem item)
 {
@@ -313,21 +317,24 @@ bool CUIActorMenu::CanMoveToPartner(PIItem pItem)
 	{
 		return false;
 	}
+	
+	//Alundaio: 
+	luabind::functor<bool> funct;
+	if (ai().script_engine().functor("actor_menu_inventory.CUIActorMenu_CanMoveToPartner", funct))
+	{
+		if (funct(m_pPartnerInvOwner->cast_game_object()->lua_game_object(),pItem->object().lua_game_object(), r1, r2, itmWeight, partner_inv_weight, partner_max_weight) == false)
+			return false;
+	}
+	//-Alundaio
+	
 	return true;
 }
 
 void CUIActorMenu::UpdateActor()
 {
-	if ( IsGameTypeSingle() )
-	{
-		string64 buf;
-		xr_sprintf( buf, "%d RU", m_pActorInvOwner->get_money() );
-		m_ActorMoney->SetText( buf );
-	}
-	else
-	{
-		UpdateActorMP();
-	}
+	string64 buf;
+	xr_sprintf( buf, "%d RU", m_pActorInvOwner->get_money() );
+	m_ActorMoney->SetText( buf );
 	
 	CActor* actor = smart_cast<CActor*>( m_pActorInvOwner );
 	if ( actor )

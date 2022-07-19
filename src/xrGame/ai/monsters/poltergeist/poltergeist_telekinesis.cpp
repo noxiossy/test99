@@ -46,6 +46,8 @@ void CPolterTele::update_frame()
 void CPolterTele::update_schedule()
 {
 	inherited::update_schedule();
+	if (!m_object->g_Alive() || m_object->get_actor_ignore())
+		return;
 
 	Fvector const actor_pos				=	Actor()->Position();
 	float const dist2actor				=	actor_pos.distance_to(m_object->Position());
@@ -191,6 +193,7 @@ void CPolterTele::tele_find_objects(xr_vector<CObject*> &objects, const Fvector 
 			(obj->m_pPhysicsShell->getMass() > m_pmt_object_max_mass) || 
 			(obj == m_object) || 
 			m_object->CTelekinesis::is_active_object(obj) || 
+			(pSettings->line_exist(obj->cNameSect().c_str(), "quest_item") && pSettings->r_bool(obj->cNameSect().c_str(), "quest_item")) ||
 			!obj->m_pPhysicsShell->get_ApplyByGravity()) continue;
 
 		
@@ -275,7 +278,7 @@ struct SCollisionHitCallback:
 	{
 		VERIFY( object );
 	}
-	void call( IPhysicsShellHolder* obj, float min_cs, float max_cs, float &cs, float &hl, ICollisionDamageInfo* di )
+	void call( IPhysicsShellHolder* obj, float min_cs, float max_cs, float &cs, float &hl, ICollisionDamageInfo* di ) override
 	{
 		
 		if( cs > min_cs*0.5f )
