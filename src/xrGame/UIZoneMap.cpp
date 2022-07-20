@@ -174,12 +174,10 @@ void CUIZoneMap::SetupCurrentMap()
 
 	Frect r;
 	m_clipFrame.GetAbsoluteRect		(r);	
-	//m_activeMap->WorkingArea().set	(r);
-	m_activeMap->SetClipRect		(r);
+	m_activeMap->WorkingArea().set	(r);
 
 	Fvector2						wnd_size;
-	//float zoom_factor				= float(m_clipFrame.GetWidth())/100.0f;
-	float zoom_factor				= float(m_clipFrame.GetWndRect().width())/100.0f;
+	float zoom_factor				= float(m_clipFrame.GetWidth())/100.0f;
 
 	LPCSTR ln						= Level().name().c_str();
 	if(	pGameIni->section_exist(ln) )
