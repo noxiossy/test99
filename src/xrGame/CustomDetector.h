@@ -182,6 +182,7 @@ public:
 	bool					m_bLightShotEnabled;
 	bool					m_LightShadowsEnabled;
 	bool					m_LightPos;
+	bool					m_light_art;
 public:
 	void					Light_Create		();
 	void					Light_Destroy		();
