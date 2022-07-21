@@ -77,6 +77,15 @@ private:
 	bool				m_fake_indicators_update;
 //	bool				m_cur_state_LA[it_max];
 	bool				m_b_force_update;
+	
+protected:
+	CUIStatic*			m_ind_start_line;
+	CUIStatic*			m_ind_radiation;
+	CUIStatic*			m_ind_starvation;
+	CUIStatic*			m_ind_weapon_broken;
+	CUIStatic*			m_ind_bleeding;
+	CUIStatic*			m_ind_psyhealth;
+	CUIStatic*			m_ind_overweight;	
 public:
 					CUIHudStatesWnd		();
 	virtual			~CUIHudStatesWnd	();
@@ -89,6 +98,7 @@ public:
 			void	on_connected		();
 			void	reset_ui			();
 			void	UpdateHealth		( CActor* actor );
+			void	UpdateIndicatorIcons	( CActor* actor );
 			void	SetAmmoIcon			( const shared_str& sect_name );
 			void	UpdateActiveItemInfo( CActor* actor );
 

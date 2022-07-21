@@ -52,7 +52,7 @@ void CStateManagerFlesh::execute()
 				case eStrong: state_id = eStatePanic;  break;
 				case eWeak:   state_id = eStatePanic; break;
 			}
-			if ( state_id == eStatePanic && squad->squad_alife_count() > 1 )
+			if ( state_id == eStatePanic && squad->squad_alife_count() > 2 )
 			{
 				state_id = eStateAttack;
 			}

@@ -128,6 +128,11 @@ void CCustomDetector::OnStateSwitch(u32 S, u32 oldState)
 	{
 	case eShowing:
 		{
+			if (m_light_art)
+			{
+				m_LightPos = true;
+				Light_Start();
+			}
 			g_player_hud->attach_item	(this);
 			m_sounds.PlaySound			("sndShow", Fvector().set(0,0,0), this, true, false);
 			PlayHUDMotion				(m_bFastAnimMode?"anm_show_fast":"anm_show", FALSE/*TRUE*/, this, GetState());
@@ -136,7 +141,11 @@ void CCustomDetector::OnStateSwitch(u32 S, u32 oldState)
 	case eHiding:
 		{
 			if (oldState != eHiding)
-			{
+			{			
+				if (m_light_art)
+				{
+					Light_Destroy();
+				}
 				m_sounds.PlaySound("sndHide", Fvector().set(0, 0, 0), this, true, false);
 				PlayHUDMotion(m_bFastAnimMode ? "anm_hide_fast" : "anm_hide", FALSE/*TRUE*/, this, GetState());
 				SetPending(TRUE);
@@ -191,6 +200,8 @@ CCustomDetector::CCustomDetector()
 	m_ui				= NULL;
 	m_bFastAnimMode		= false;
 	m_bNeedActivation	= false;
+	m_bWorking			= false;
+	light_render		= 0;
 }
 
 CCustomDetector::~CCustomDetector() 
@@ -202,6 +213,10 @@ CCustomDetector::~CCustomDetector()
 
 BOOL CCustomDetector::net_Spawn(CSE_Abstract* DC) 
 {
+	if (m_light_art)
+	{
+		Light_Start	();
+	}
 	TurnDetectorInternal(false);
 	return		(inherited::net_Spawn(DC));
 }
@@ -209,16 +224,93 @@ BOOL CCustomDetector::net_Spawn(CSE_Abstract* DC)
 void CCustomDetector::Load(LPCSTR section) 
 {
 	inherited::Load			(section);
-
+	
+	m_LightPos = false;
+	
 	m_fAfDetectRadius		= pSettings->r_float(section,"af_radius");
 	m_fAfVisRadius			= pSettings->r_float(section,"af_vis_radius");
 	m_fDecayRate = READ_IF_EXISTS(pSettings, r_float, section, "decay_rate", 0.f); //Alundaio
 	m_artefacts.load		(section, "af");
+	m_light_art = READ_IF_EXISTS(pSettings, r_bool, section, "use_lights", false);
 
 	m_sounds.LoadSound( section, "snd_draw", "sndShow");
 	m_sounds.LoadSound( section, "snd_holster", "sndHide");
+	
+	if( (pSettings->line_exist(section,"light_shadows_disabled")) && (m_light_art) )
+	{
+		m_LightShadowsEnabled = !pSettings->r_bool(section,"light_shadows_disabled");
+	}else
+		m_LightShadowsEnabled		= true;
+	
+	if( (pSettings->line_exist(section,"light_disabled")) && (m_light_art) )
+	{
+		m_bLightShotEnabled		= !pSettings->r_bool(section,"light_disabled");
+	}else
+		m_bLightShotEnabled		= true;
+	
+	LoadLights			(section, "");
 }
 
+void CCustomDetector::Light_Create		()
+{
+	//lights
+	light_render				=	::Render->light_create();
+	if (m_LightShadowsEnabled)
+	{
+		light_render->set_shadow	(true);
+	}else light_render->set_shadow	(false);
+															
+}
+
+void CCustomDetector::Light_Destroy		()
+{
+	if(light_render)
+	{
+		light_render.destroy		();
+	}
+}
+
+void CCustomDetector::LoadLights		(LPCSTR section, LPCSTR prefix)
+{
+	string256				full_name;
+	// light
+	if ( (m_bLightShotEnabled) && (m_light_art) )
+	{
+		Fvector clr			= pSettings->r_fvector3		(section, strconcat(sizeof(full_name),full_name, prefix, "light_color"));
+		light_base_color.set(clr.x,clr.y,clr.z,1);
+		light_base_range	= pSettings->r_float		(section, strconcat(sizeof(full_name),full_name, prefix, "light_range")		);
+		light_var_color		= pSettings->r_float		(section, strconcat(sizeof(full_name),full_name, prefix, "light_var_color")	);
+		light_var_range		= pSettings->r_float		(section, strconcat(sizeof(full_name),full_name, prefix, "light_var_range")	);
+	}
+}
+
+void CCustomDetector::Light_Start	()
+{
+
+		if(!light_render)		Light_Create();
+
+		if (Device.dwFrame	!= light_frame)
+		{
+			light_frame					= Device.dwFrame;
+			
+			light_build_color.set		(Random.randFs(light_var_color,light_base_color.r),Random.randFs(light_var_color,light_base_color.g),Random.randFs(light_var_color,light_base_color.b),1);
+			light_build_range			= Random.randFs(light_var_range,light_base_range);
+		}
+}
+
+void CCustomDetector::Light_Render	(const Fvector& P)
+{
+	R_ASSERT(light_render);
+
+	light_render->set_position	(P);
+	light_render->set_color		(light_build_color.r,light_build_color.g,light_build_color.b);
+	light_render->set_range		(light_build_range);
+
+	if(	!light_render->get_active() )
+	{
+		light_render->set_active	(true);
+	}
+}
 
 void CCustomDetector::shedule_Update(u32 dt) 
 {
@@ -298,6 +390,21 @@ void CCustomDetector::UpdateVisibility()
 void CCustomDetector::UpdateCL() 
 {
 	inherited::UpdateCL();
+	
+	if ( ( light_render ) && ( m_light_art ) )
+	{
+		if (m_LightPos)
+		{
+			auto actorpos = Actor()->Position();
+			actorpos.y+=1.0f;
+			Light_Render(actorpos);
+		}else
+		{
+			auto thispos = this->Position();
+			thispos.y+=1.0f;
+			Light_Render(thispos);
+		}
+	}
 
 	if(H_Parent()!=Level().CurrentEntity() )			return;
 
@@ -309,11 +416,22 @@ void CCustomDetector::UpdateCL()
 void CCustomDetector::OnH_A_Chield() 
 {
 	inherited::OnH_A_Chield		();
+	
+	if (m_light_art)
+	{
+		Light_Destroy();
+		m_LightPos = false;
+	}
 }
 
 void CCustomDetector::OnH_B_Independent(bool just_before_destroy) 
 {
 	inherited::OnH_B_Independent(just_before_destroy);
+
+	if (m_light_art)
+	{
+		Light_Start	();
+	}
 	
 	m_artefacts.clear			();
 
@@ -333,6 +451,10 @@ void CCustomDetector::OnMoveToRuck(const SInvItemPlace& prev)
 	{
 		SwitchState					(eHidden);
 		g_player_hud->detach_item	(this);
+		if (m_light_art)
+		{
+			Light_Destroy();
+		}
 	}
 	TurnDetectorInternal			(false);
 	StopCurrentAnimWithoutCallback	();

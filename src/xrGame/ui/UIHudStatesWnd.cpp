@@ -20,6 +20,9 @@
 #include "../ai/monsters/basemonster/base_monster.h"
 #include "../PDA.h"
 #include "WeaponMagazinedWGrenade.h"
+#include "../HUDManager.h"
+#include "../Weapon.h"
+#include "../InventoryOwner.h"
 
 CUIHudStatesWnd::CUIHudStatesWnd()
 :m_b_force_update(true),
@@ -172,6 +175,15 @@ void CUIHudStatesWnd::InitFromXml( CUIXml& xml, LPCSTR path )
 		SwitchLA( false, (ALife::EInfluenceType)i );
 	}
 */	
+
+	m_ind_start_line	= UIHelper::CreateStatic( xml, "indicator_start_line", this);
+	m_ind_bleeding		= UIHelper::CreateStatic( xml, "indicator_bleeding", this);
+	m_ind_radiation		= UIHelper::CreateStatic( xml, "indicator_radiation", this);
+	m_ind_starvation	= UIHelper::CreateStatic( xml, "indicator_starvation", this);
+	m_ind_weapon_broken	= UIHelper::CreateStatic( xml, "indicator_weapon_broken", this);
+	m_ind_psyhealth		= UIHelper::CreateStatic( xml, "indicator_psy", this);
+	m_ind_overweight	= UIHelper::CreateStatic( xml, "indicator_overweight", this);
+
 	xml.SetLocalRoot( stored_root );
 }
 
@@ -227,12 +239,144 @@ void CUIHudStatesWnd::Update()
 	}
 
 	UpdateHealth( actor );
+	UpdateIndicatorIcons( actor );
 	UpdateActiveItemInfo( actor );
 	UpdateIndicators( actor );
 	
 	UpdateZones();
 
 	inherited::Update();
+}
+
+void CUIHudStatesWnd::UpdateIndicatorIcons( CActor* actor )
+{
+	float hin = 0.0f;
+	float xin = 0.0f;
+	Fvector2 pos;
+	hin = m_ind_start_line->GetWndPos().y;
+	xin = m_ind_start_line->GetWndPos().x;
+
+	// BLEEDING ICON
+	float bleeding = actor->conditions().BleedingSpeed();
+	u32 a_bleeding = (u32)( (1 - pow((1-bleeding),3) ) * 255);
+	u32 a_reverse_bleeding = (u32)( (1 - pow(bleeding,3) ) * 255);
+	m_ind_bleeding->SetTextureColor(color_rgba(a_bleeding,a_reverse_bleeding,0,255)); 
+	if(bleeding < 0.05f)
+		m_ind_bleeding->Show(false);
+	else
+	{
+		m_ind_bleeding->Show(true);
+
+        	pos.set(m_ind_bleeding->GetWndPos());
+        	pos.y = hin;
+       		pos.x = xin;
+        	m_ind_bleeding->SetWndPos(pos);
+        	hin -= m_ind_bleeding->GetWndSize().y;
+	}
+
+	// RADIATION ICON
+	float radiation = actor->conditions().GetRadiation();
+	u32 a_radiation = (u32)( (1 - pow((1-radiation),3) ) * 255);
+	u32 a_reverse_radiation = (u32)( (1 - pow(radiation,3) ) * 255);
+	m_ind_radiation->SetTextureColor(color_rgba(a_radiation,a_reverse_radiation,0,255)); 
+	if(radiation < 0.1f)
+		m_ind_radiation->Show(false);
+	else
+	{
+		m_ind_radiation->Show(true);
+
+        	pos.set(m_ind_radiation->GetWndPos());
+        	pos.y = hin;
+       		pos.x = xin;
+        	m_ind_radiation->SetWndPos(pos);
+        	hin -= m_ind_radiation->GetWndSize().y;
+	}
+
+	// STARVATION ICON
+ 	float satiety = actor->conditions().GetSatiety();
+	u32 a_satiety = (u32)( (1 - pow(satiety,3) ) * 255);
+	u32 a_reverse_satiety = (u32)( (1 - pow((1-satiety),3) ) * 255);
+	m_ind_starvation->SetTextureColor(color_rgba(a_satiety,a_reverse_satiety,0,255)); 
+	if(satiety > 0.8f)
+		m_ind_starvation->Show(false);
+	else
+	{
+		m_ind_starvation->Show(true);
+		
+        	pos.set(m_ind_starvation->GetWndPos());
+        	pos.y = hin;
+       		pos.x = xin;
+        	m_ind_starvation->SetWndPos(pos);
+        	hin -= m_ind_starvation->GetWndSize().y;
+	}
+
+	// WEAPON BROKEN ICON
+	u16 slot = actor->inventory().GetActiveSlot();
+	m_ind_weapon_broken->Show(false);
+	if(slot==INV_SLOT_2 || slot==INV_SLOT_3)
+	{
+		CWeapon* weapon = smart_cast<CWeapon*>(actor->inventory().ItemFromSlot(slot));
+		if(weapon)
+		{
+			float condition = weapon->GetCondition();
+			if(condition < 0.8f)
+			{
+				m_ind_weapon_broken->Show(true);
+				u32 a_condition = (u32)( (1 - pow(condition,3) ) * 255);
+				u32 a_reverse_condition = (u32)( (1 - pow((1-condition),3) ) * 255);
+				m_ind_weapon_broken->SetTextureColor(color_rgba(a_condition,a_reverse_condition,0,255));
+
+				pos.set(m_ind_weapon_broken->GetWndPos());
+        			pos.y = hin;
+       				pos.x = xin;
+        			m_ind_weapon_broken->SetWndPos(pos);
+        			hin -= m_ind_weapon_broken->GetWndSize().y;
+			}
+		}
+	}
+
+	// PSYHEALTH ICON
+	float psyhealth = actor->conditions().GetPsyHealth();
+	u32 a_psy = (u32)( (1 - pow(psyhealth,3) ) * 255);
+	u32 a_reverse_psy = (u32)( (1 - pow((1-psyhealth),3) ) * 255);
+	m_ind_psyhealth->SetTextureColor(color_rgba(a_psy,a_reverse_psy,0,255)); 
+	if(psyhealth > 0.8f)
+		m_ind_psyhealth->Show(false);
+	else
+	{
+		m_ind_psyhealth->Show(true);
+		
+        	pos.set(m_ind_psyhealth->GetWndPos());
+        	pos.y = hin;
+       		pos.x = xin;
+        	m_ind_psyhealth->SetWndPos(pos);
+        	hin -= m_ind_psyhealth->GetWndSize().y;
+	}
+
+	// OVERWEIGHT ICON
+	bool b_God = GodMode();
+	float cur_weight = actor->inventory().TotalWeight();
+	float max_weight = actor->MaxWalkWeight();
+	float dif_weight = (cur_weight/max_weight);
+	u32 a_weight = (u32)( (1 - pow((1-dif_weight),3) ) * 255);
+	u32 a_reverse_weight = (u32)( (1 - pow(dif_weight,3) ) * 255);
+	if (cur_weight>=max_weight && !b_God)
+	{
+		a_weight = 255;
+		a_reverse_weight = 0;
+	}
+	m_ind_overweight->SetTextureColor(color_rgba(a_weight,a_reverse_weight,0,255)); 
+	m_ind_overweight->Show(false);
+	if(cur_weight>=max_weight-15.0f && !b_God)
+	{
+		m_ind_overweight->Show(true);
+
+       	       	pos.set(m_ind_overweight->GetWndPos());
+        	pos.y = hin;
+       		pos.x = xin;
+        	m_ind_overweight->SetWndPos(pos);
+        	hin -= m_ind_overweight->GetWndSize().y;
+	}
 }
 
 void CUIHudStatesWnd::UpdateHealth( CActor* actor )
