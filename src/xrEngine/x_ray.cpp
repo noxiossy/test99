@@ -973,31 +973,6 @@ void CApplication::OnEvent(EVENT E, u64 P1, u64 P2)
         Console->ExecuteCommand(command, false);
         xr_free(command);
     }
-    else if (E == eStartMPDemo)
-    {
-        LPSTR demo_file = LPSTR(P1);
-
-        R_ASSERT(0 == g_pGameLevel);
-        R_ASSERT(0 != g_pGamePersistent);
-
-        Console->Execute("main_menu off");
-        Console->Hide();
-        Device.Reset(false);
-
-        g_pGameLevel = (IGame_Level*)NEW_INSTANCE(CLSID_GAME_LEVEL);
-        shared_str server_options = g_pGameLevel->OpenDemoFile(demo_file);
-
-        //-----------------------------------------------------------
-        g_pGamePersistent->PreStart(server_options.c_str());
-        //-----------------------------------------------------------
-
-        pApp->LoadBegin();
-        g_pGamePersistent->Start("");//server_options.c_str()); - no prefetch !
-        g_pGameLevel->net_StartPlayDemo();
-        pApp->LoadEnd();
-
-        xr_free(demo_file);
-    }
 }
 
 static CTimer phase_timer;

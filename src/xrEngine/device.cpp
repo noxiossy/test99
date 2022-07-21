@@ -79,7 +79,7 @@ void CRenderDevice::Clear()
 
 void CRenderDevice::End(void)
 {
-#ifndef DEDICATED_SERVER
+
 
 
 #ifdef INGAME_EDITOR
@@ -139,7 +139,6 @@ void CRenderDevice::End(void)
     if (load_finished && m_editor)
         m_editor->on_load_finished();
 # endif // #ifdef INGAME_EDITOR
-#endif
 }
 
 

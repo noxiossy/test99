@@ -42,6 +42,8 @@ void xrCore::_initialize(LPCSTR _ApplicationName, LogCallback cb, BOOL init_fs, 
 #endif
         // Init COM so we can use CoCreateInstance
         // HRESULT co_res =
+		CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+
         Params = xr_strdup(GetCommandLine());
         xr_strlwr(Params);
 
