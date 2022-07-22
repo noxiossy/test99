@@ -163,7 +163,7 @@
 #endif // frequently in release code due to large amount of VERIFY
 
 
-#ifdef _M_AMD64
+#ifdef _M_X64
 #pragma warning (disable : 4512 )
 #endif
 

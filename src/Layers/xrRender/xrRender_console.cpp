@@ -251,6 +251,7 @@ int			ps_r3_dyn_wet_surf_sm_res	= 256;				// 256
 Flags32 ps_actor_shadow_flags = {0}; //Swartz: actor shadow
 
 //AVO: detail draw radius
+Flags32		ps_common_flags = {0};		// r1-only
 u32			ps_steep_parallax = 0;
 int			ps_r__detail_radius = 49;
 #ifdef DETAIL_RADIUS // управление радиусом отрисовки травы

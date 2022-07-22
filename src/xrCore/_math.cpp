@@ -21,35 +21,41 @@ u16 getFPUsw() { return 0; }
 
 namespace FPU
 {
-XRCORE_API void m24(void)
-{
-    _control87(_PC_24, MCW_PC);
-    _control87(_RC_CHOP, MCW_RC);
-}
-XRCORE_API void m24r(void)
-{
-    _control87(_PC_24, MCW_PC);
-    _control87(_RC_NEAR, MCW_RC);
-}
-XRCORE_API void m53(void)
-{
-    _control87(_PC_53, MCW_PC);
-    _control87(_RC_CHOP, MCW_RC);
-}
-XRCORE_API void m53r(void)
-{
-    _control87(_PC_53, MCW_PC);
-    _control87(_RC_NEAR, MCW_RC);
-}
-XRCORE_API void m64(void)
-{
-    _control87(_PC_64, MCW_PC);
-    _control87(_RC_CHOP, MCW_RC);
-}
-XRCORE_API void m64r(void)
-{
-    _control87(_PC_64, MCW_PC);
-    _control87(_RC_NEAR, MCW_RC);
+	XRCORE_API void 	m24		(void)	{
+#ifdef _M_IX86
+		_control87	( _PC_24,   MCW_PC );
+#endif
+		_control87	( _RC_CHOP, MCW_RC );
+	}
+	XRCORE_API void 	m24r	(void)	{
+#ifdef _M_IX86
+		_control87	( _PC_24,   MCW_PC );
+#endif
+		_control87	( _RC_NEAR, MCW_RC );
+	}
+	XRCORE_API void 	m53		(void)	{
+#ifdef _M_IX86
+		_control87	( _PC_53,   MCW_PC );
+#endif
+		_control87	( _RC_CHOP, MCW_RC );
+	}
+	XRCORE_API void 	m53r	(void)	{
+#ifdef _M_IX86
+		_control87	( _PC_53,   MCW_PC );
+#endif
+		_control87	( _RC_NEAR, MCW_RC );
+	}
+	XRCORE_API void 	m64		(void)	{
+#ifdef _M_IX86
+		_control87	( _PC_64,   MCW_PC );
+#endif
+		_control87	( _RC_CHOP, MCW_RC );
+	}
+	XRCORE_API void 	m64r	(void)	{
+#ifdef _M_IX86
+		_control87	( _PC_64,   MCW_PC );
+#endif
+		_control87	( _RC_NEAR, MCW_RC );
 }
 
 void initialize() {}
@@ -209,7 +215,9 @@ void Detect()
     clk_per_milisec = clk_per_second / 1000;
     clk_per_microsec = clk_per_milisec / 1000;
 
-    _control87(_PC_64, MCW_PC);
+#ifndef _WIN64
+		_control87	( _PC_64,   MCW_PC );
+#endif
     // _control87 ( _RC_CHOP, MCW_RC );
     double a, b;
     a = 1;
