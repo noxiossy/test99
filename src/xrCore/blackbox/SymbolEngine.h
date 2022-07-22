@@ -24,7 +24,7 @@ USE_BUGSLAYERUTIL - If defined, the class will have another
                     BUGSLAYERUTIL.H to include this file.
 ----------------------------------------------------------------------*/
 
-#ifndef _SYMBOLENGINE_H
+#if 0 // #ifndef _SYMBOLENGINE_H
 #define _SYMBOLENGINE_H
 
 // You could include either IMAGEHLP.DLL or DBGHELP.DLL.
@@ -290,7 +290,7 @@ public      :
     }
 
     BOOL SymGetSymFromAddr ( IN  DWORD               dwAddr          ,
-                             OUT PDWORD_PTR          pdwDisplacement ,
+                             OUT PDWORD              pdwDisplacement ,
                              OUT PIMAGEHLP_SYMBOL    Symbol           )
     {
         return ( ::SymGetSymFromAddr ( m_hProcess       ,
@@ -426,12 +426,7 @@ public      :
     {
         return ( ::SymRegisterCallback ( m_hProcess         ,
                                          CallbackFunction   ,
-#ifdef _M_X64
-										 (ULONG64)UserContext
-#else
-										UserContext
-#endif
-		));
+                                         UserContext         ) ) ;
     }
 
 

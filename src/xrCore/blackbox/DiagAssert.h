@@ -208,7 +208,7 @@ void  __stdcall
 /*//////////////////////////////////////////////////////////////////////
                            _DEBUG Is Defined
 //////////////////////////////////////////////////////////////////////*/
-#ifdef DEBUG
+#ifdef _DEBUG
 
 /*//////////////////////////////////////////////////////////////////////
                                 Defines
@@ -245,7 +245,7 @@ void  __stdcall
         if ( !(x)                                               &&  \
              DiagAssert ( a , _T ( #x ) , __FILE__  , __LINE__)    )\
         {                                                           \
-                DebugBreak ( ) ;                                        \
+                __asm int 3                                         \
         }                                                           \
     } while (0)
 #endif  // PORTABLE_BUGSLAYERUTIL
@@ -295,7 +295,7 @@ void  __stdcall
 
 #ifdef __cplusplus
 //inline void TraceOutput(LPCTSTR, ...) { }
-#define TRACE(fmt)
+#define TRACE   (void)0
 #endif
 
 #define TRACE0(fmt)
