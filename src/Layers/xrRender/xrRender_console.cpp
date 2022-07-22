@@ -10,7 +10,6 @@ xr_token pp_aa_mode_token[] = {
 	{ nullptr, 0 },
 };
 
-
 u32			ps_Preset				=	2	;
 xr_token							qpreset_token							[ ]={
 	{ "Minimum",					0											},
@@ -127,7 +126,7 @@ float		ps_r__Tree_w_amp			= 0.005f;
 Fvector		ps_r__Tree_Wave				= {.1f, .01f, .11f};
 float		ps_r__Tree_SBC				= 1.5f	;	// scale bias correct
 
-float		ps_r__WallmarkTTL			= 50.f	;
+float		ps_r__WallmarkTTL			= 300.f	;
 float		ps_r__WallmarkSHIFT			= 0.0001f;
 float		ps_r__WallmarkSHIFT_V		= 0.0001f;
 
@@ -191,32 +190,32 @@ BOOL		ps_clear_models_on_unload	= 0; //Alundaio
 BOOL		ps_use_precompiled_shaders = 0; //Alundaio
 float		ps_r2_df_parallax_h			= 0.02f;
 float		ps_r2_df_parallax_range		= 75.f;
-float		ps_r2_tonemap_middlegray	= 1.f;			// r2-only
+float		ps_r2_tonemap_middlegray	= 0.8f;			// r2-only
 float		ps_r2_tonemap_adaptation	= 1.f;				// r2-only
-float		ps_r2_tonemap_low_lum		= 0.0001f;			// r2-only
-float		ps_r2_tonemap_amount		= 0.7f;				// r2-only
-float		ps_r2_ls_bloom_kernel_g		= 3.f;				// r2-only
+float		ps_r2_tonemap_low_lum		= 0.7f;			// r2-only
+float		ps_r2_tonemap_amount		= 0.2f;				// r2-only
+float		ps_r2_ls_bloom_kernel_g		= 2.0f;				// r2-only
 float		ps_r2_ls_bloom_kernel_b		= .7f;				// r2-only
-float		ps_r2_ls_bloom_speed		= 100.f;				// r2-only
-float		ps_r2_ls_bloom_kernel_scale	= .7f;				// r2-only	// gauss
+float		ps_r2_ls_bloom_speed		= 35.f;				// r2-only
+float		ps_r2_ls_bloom_kernel_scale	= 0.5f;				// r2-only	// gauss
 float		ps_r2_ls_dsm_kernel			= .7f;				// r2-only
 float		ps_r2_ls_psm_kernel			= .7f;				// r2-only
 float		ps_r2_ls_ssm_kernel			= .7f;				// r2-only
-float		ps_r2_ls_bloom_threshold	= .00001f;				// r2-only
+float		ps_r2_ls_bloom_threshold	= .4f;				// r2-only
 Fvector		ps_r2_aa_barier				= { .8f, .1f, 0};	// r2-only
 Fvector		ps_r2_aa_weight				= { .25f,.25f,0};	// r2-only
 float		ps_r2_aa_kernel				= .5f;				// r2-only
-float		ps_r2_mblur					= .0f;				// .5f
+float		ps_r2_mblur					= .04f;				// .5f
 int			ps_r2_GI_depth				= 1;				// 1..5
 int			ps_r2_GI_photons			= 16;				// 8..64
 float		ps_r2_GI_clip				= EPS_L;			// EPS
 float		ps_r2_GI_refl				= .9f;				// .9f
 float		ps_r2_ls_depth_scale		= 1.00001f;			// 1.00001f
-float		ps_r2_ls_depth_bias			= -0.0003f;			// -0.0001f
+float		ps_r2_ls_depth_bias			= -0.0001f;			// -0.0001f
 float		ps_r2_ls_squality			= 1.0f;				// 1.00f
-float		ps_r2_sun_tsm_projection	= 0.3f;			// 0.18f
-float		ps_r2_sun_tsm_bias			= -0.01f;			// 
-float		ps_r2_sun_near				= 20.f;				// 12.0f
+float		ps_r2_sun_tsm_projection	= 0.6f;			// 0.18f
+float		ps_r2_sun_tsm_bias			= -0.1f;			// 
+float		ps_r2_sun_near				= 16.f;				// 12.0f
 
 extern float OLES_SUN_LIMIT_27_01_07;	//	actually sun_far
 
@@ -226,8 +225,8 @@ float		ps_r2_sun_depth_far_bias	= -0.00002f;			// -0.0000f
 float		ps_r2_sun_depth_near_scale	= 1.0000f;			// 1.00001f
 float		ps_r2_sun_depth_near_bias	= 0.00001f;		// -0.00005f
 float		ps_r2_sun_lumscale			= 1.0f;				// 1.0f
-float		ps_r2_sun_lumscale_hemi		= 1.0f;				// 1.0f
-float		ps_r2_sun_lumscale_amb		= 1.0f;
+float		ps_r2_sun_lumscale_hemi		= 0.8f;				// 1.0f
+float		ps_r2_sun_lumscale_amb		= 0.0f;
 float		ps_r2_gmaterial				= 2.2f;				// 
 float		ps_r2_zfill					= 0.25f;				// .1f
 
@@ -252,7 +251,6 @@ int			ps_r3_dyn_wet_surf_sm_res	= 256;				// 256
 Flags32 ps_actor_shadow_flags = {0}; //Swartz: actor shadow
 
 //AVO: detail draw radius
-Flags32		ps_common_flags = {0};		// r1-only
 u32			ps_steep_parallax = 0;
 int			ps_r__detail_radius = 49;
 #ifdef DETAIL_RADIUS // управление радиусом отрисовки травы
@@ -779,6 +777,8 @@ void		xrRender_initconsole	()
 	CMD4(CCC_Vector3,	"r__d_tree_wave",		&ps_r__Tree_Wave,			tw_min, tw_max	);
 #endif // DEBUG
 
+	CMD3(CCC_Mask,		"r__no_ram_textures",	&ps_r__common_flags,		RFLAG_NO_RAM_TEXTURES);
+
 	CMD2(CCC_tf_Aniso,	"r__tf_aniso",			&ps_r__tf_Anisotropic		); //	{1..16}
 
 	// R1
@@ -885,11 +885,11 @@ void		xrRender_initconsole	()
 	CMD4(CCC_Float,		"r2_dhemi_light_flow",	&ps_r2_dhemi_light_flow,	0,		1.f	);
 	CMD4(CCC_Float,		"r2_dhemi_smooth",		&ps_r2_lt_smooth,			0.f,	10.f	);
 	CMD3(CCC_Mask,		"rs_hom_depth_draw",	&ps_r2_ls_flags_ext,		R_FLAGEXT_HOM_DEPTH_DRAW);
-	CMD3(CCC_Mask,		"r2_shadow_cascede_zcul",&ps_r2_ls_flags_ext,		R2FLAGEXT_SUN_ZCULLING);
-	CMD3(CCC_Mask,		"r2_shadow_cascede_old", &ps_r2_ls_flags_ext,		R2FLAGEXT_SUN_OLD);
 	
 #endif // DEBUG
 
+	CMD3(CCC_Mask,		"r2_shadow_cascede_zcul",&ps_r2_ls_flags_ext,		R2FLAGEXT_SUN_ZCULLING);
+	CMD3(CCC_Mask,		"r2_shadow_cascede_old", &ps_r2_ls_flags_ext,		R2FLAGEXT_SUN_OLD);
 
 	CMD4(CCC_Float,		"r2_ls_depth_scale",	&ps_r2_ls_depth_scale,		0.5,	1.5		);
 	CMD4(CCC_Float,		"r2_ls_depth_bias",		&ps_r2_ls_depth_bias,		-0.5,	+0.5	);

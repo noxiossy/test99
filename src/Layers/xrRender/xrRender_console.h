@@ -55,13 +55,6 @@ extern ECORE_API	float		ps_r__ssaDONTSORT	;
 extern ECORE_API	float		ps_r__ssaHZBvsTEX	;
 extern ECORE_API	int			ps_r__tf_Anisotropic;
 
-enum
-{
-    RFLAG_NO_RAM_TEXTURES = (1 << 0),
-};
-
-extern ECORE_API Flags32 ps_r__common_flags;
-
 // R1
 extern ECORE_API	float		ps_r1_ssaLOD_A;
 extern ECORE_API	float		ps_r1_ssaLOD_B;
@@ -81,7 +74,11 @@ extern ECORE_API	int			ps_r1_SoftwareSkinning;	// r1-only
 enum
 {
 	R1FLAG_DLIGHTS				= (1<<0),
+	RFLAG_NO_RAM_TEXTURES		= (2<<1),
 };
+
+extern ECORE_API Flags32 ps_r__common_flags;
+
 
 // R2
 extern ECORE_API	float		ps_r2_ssaLOD_A;
