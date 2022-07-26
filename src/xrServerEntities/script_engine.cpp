@@ -293,8 +293,7 @@ void CScriptEngine::init()
 		if (!lua_studio_connected)
 			try_connect_to_debugger		();
 		else {
-			jit_command					(lua(), "debug=2");
-			jit_command					(lua(), "off");
+            luaJIT_setmode(lua(), 0, LUAJIT_MODE_ENGINE | LUAJIT_MODE_OFF);
 			m_lua_studio_world->add		(lua());
 		}
 	}
@@ -309,6 +308,15 @@ void CScriptEngine::init()
     m_stack_is_ready					= true;
 #endif
 
+#ifndef USE_LUA_STUDIO
+#	ifdef DEBUG
+#		if defined(USE_DEBUGGER) && !defined(USE_LUA_STUDIO)
+    if( !debugger() || !debugger()->Active()  )
+#		endif // #if defined(USE_DEBUGGER) && !defined(USE_LUA_STUDIO)
+        lua_sethook					(lua(),lua_hook_call,	LUA_MASKLINE|LUA_MASKCALL|LUA_MASKRET,	0);
+#	endif // #ifdef DEBUG
+#endif // #ifndef USE_LUA_STUDIO
+    //	lua_sethook							(lua(), lua_hook_call,	LUA_MASKLINE|LUA_MASKCALL|LUA_MASKRET,	0);
 
     bool								save = m_reload_modules;
     m_reload_modules = true;

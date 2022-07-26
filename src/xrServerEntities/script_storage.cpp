@@ -59,7 +59,7 @@ LPCSTR	file_header = 0;
 #endif
 
 #ifndef PURE_ALLOC
-#	ifndef USE_MEMORY_MONITOR
+//#	ifndef USE_MEMORY_MONITOR
 #		define USE_DL_ALLOCATOR
 #	endif // USE_MEMORY_MONITOR
 #endif // PURE_ALLOC
@@ -218,6 +218,10 @@ void CScriptStorage::reinit	()
 		return;
 	}
 
+
+    luaL_openlibs(lua());
+    if (strstr(Core.Params, "-nojit"))
+        luaJIT_setmode(lua(), 0, LUAJIT_MODE_ENGINE | LUAJIT_MODE_OFF);
 	// initialize lua standard library functions 
 	struct luajit {
 		static void open_lib	(lua_State *L, pcstr module_name, lua_CFunction function)
@@ -329,10 +333,6 @@ int CScriptStorage::vscript_log		(ScriptStorage::ELuaMessageType tLuaMessageType
         S = "[LUA][HOOK_TAIL_RETURN] ";
         SS = "[TAIL_RETURN] ";
         break;
-		case ScriptStorage::eLuaMessageTypeUser:
-			S = "";
-			SS = "";
-			break;
     }
     default: NODEFAULT;
     }
