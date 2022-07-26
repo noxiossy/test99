@@ -32,9 +32,8 @@
 #include "lcp.h"
 #include "util.h"
 #include "stdlib.h"
-#include <random>
 #include <algorithm>
-
+#include <random>
 
 
 #define ALLOCA dALLOCA16

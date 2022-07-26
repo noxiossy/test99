@@ -192,6 +192,7 @@ protected:
     void xr_stdcall Hide_cmd_esc();
 
     void xr_stdcall GamePause();
+	void xr_stdcall SwitchKL	();
 
 protected:
     void add_cmd_history(shared_str const& str);

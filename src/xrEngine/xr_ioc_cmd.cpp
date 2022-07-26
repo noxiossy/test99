@@ -713,7 +713,7 @@ extern int rsDIB_Size;
 
 extern int g_ErrorLineCount;
 
-//ENGINE_API int ps_r__Supersample = 1;
+ENGINE_API int			ps_r__Supersample			= 1;
 void CCC_Register()
 {
     // General
@@ -823,7 +823,7 @@ void CCC_Register()
     CMD4(CCC_Float, "mouse_sens", &psMouseSens, 0.001f, 0.6f);
 
     // Camera
-    CMD2(CCC_Float, "cam_inert", &psCamInert);
+	CMD4(CCC_Float,		"cam_inert",			&psCamInert,		0.0f, 0.8f);
     CMD2(CCC_Float, "cam_slide_inert", &psCamSlideInert);
 
     CMD1(CCC_r2, "renderer");
