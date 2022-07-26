@@ -59,49 +59,10 @@ LPCSTR	file_header = 0;
 #endif
 
 #ifndef PURE_ALLOC
-//#	ifndef USE_MEMORY_MONITOR
+#	ifndef USE_MEMORY_MONITOR
 #		define USE_DL_ALLOCATOR
-//#	endif //!USE_MEMORY_MONITOR
-#endif //!PURE_ALLOC
-
-const char* get_lua_traceback(lua_State* L)
-{
-	luaL_traceback(L, L, nullptr, 0);
-	auto tb = lua_tostring(L, -1);
-	lua_pop(L, 1);
-	return tb;
-}
-
-static void *lua_alloc		(void *ud, void *ptr, size_t osize, size_t nsize) {
-    (void)ud;
-    (void)osize;
-	if (!nsize) 
-	{
-        xr_free	(ptr);
-        return	NULL;
-    }
-    else
-	  return xr_realloc(ptr, nsize);
-}
-
-#include "../xrCore/memory_allocator_options.h"
-
-#ifdef USE_ARENA_ALLOCATOR
-static const u32			s_arena_size = 96*1024*1024;
-static char					s_fake_array[s_arena_size];
-static doug_lea_allocator	s_allocator( s_fake_array, s_arena_size, "lua" );
-#else // #ifdef USE_ARENA_ALLOCATOR
-static doug_lea_allocator	s_allocator( 0, 0, "lua" );
-#endif // #ifdef USE_ARENA_ALLOCATOR
-
-
-BOOL escapeSequences = false;
-
-
-u32 game_lua_memory_usage()
-{
-    return (s_allocator.get_allocated_size());
-}
+#	endif // USE_MEMORY_MONITOR
+#endif // PURE_ALLOC
 
 static LPVOID __cdecl luabind_allocator(
     luabind::memory_allocation_function_parameter const,
@@ -109,19 +70,26 @@ static LPVOID __cdecl luabind_allocator(
     size_t const size
     )
 {
-    if (!size)
-    {
-		void* non_const_pointer = const_cast<LPVOID>(pointer);
-        xr_free(non_const_pointer);
-		return nullptr;
-    }
-
-    if (!pointer)
-    {
-		return xr_malloc(size);
+	if (!size) {
+		LPVOID	non_const_pointer = const_cast<LPVOID>(pointer);
+		xr_free	(non_const_pointer);
+		return	( 0 );
 	}
-	void* non_const_pointer = const_cast<LPVOID>(pointer);
-	return xr_realloc(non_const_pointer, size);
+
+	if (!pointer) {
+#ifdef DEBUG
+		return	( Memory.mem_alloc(size, "luabind") );
+#else // #ifdef DEBUG
+		return	( Memory.mem_alloc(size) );
+#endif // #ifdef DEBUG
+	}
+
+	LPVOID		non_const_pointer = const_cast<LPVOID>(pointer);
+#ifdef DEBUG
+	return		( Memory.mem_realloc(non_const_pointer, size, "luabind") );
+#else // #ifdef DEBUG
+	return		( Memory.mem_realloc(non_const_pointer, size) );
+#endif // #ifdef DEBUG
 }
 
 void setup_luabind_allocator()
@@ -238,38 +206,63 @@ static void put_function	(lua_State* state, u8 const* buffer, u32 const buffer_s
 }
 #endif // #ifndef DEBUG
 
-// initialize lua standard library functions 
-struct luajit
+void CScriptStorage::reinit	()
 {
-	static void open_lib(lua_State* L, pcstr module_name, lua_CFunction function)
-	{
-		lua_pushcfunction(L, function);
-		lua_pushstring(L, module_name);
-		lua_call(L, 1, 0);
-	}
-}; // struct lua;
+	if (m_virtual_machine)
+		lua_close			(m_virtual_machine);
 
-void CScriptStorage::reinit	(lua_State* LSVM)
-{
-	if (m_virtual_machine) //Как выяснилось, такое происходит при загрузке игры на этапе старта сервера 
-	{
-		//Msg("[CScriptStorage] Found working LuaJIT WM! Close it!");
-		lua_close(m_virtual_machine);
-	}
-	m_virtual_machine = LSVM;
+	m_virtual_machine		= luaL_newstate();
 
-	file_header = file_header_old;
-	//Debug.set_crashhandler(ScriptCrashHandler);
+	if (!m_virtual_machine) {
+		Msg					("! ERROR : Cannot initialize script virtual machine!");
+		return;
+	}
+
+	// initialize lua standard library functions 
+	struct luajit {
+		static void open_lib	(lua_State *L, pcstr module_name, lua_CFunction function)
+		{
+			lua_pushcfunction	(L, function);
+			lua_pushstring		(L, module_name);
+			lua_call			(L, 1, 0);
+		}
+	}; // struct lua;
+
+	luajit::open_lib	(lua(),	"",					luaopen_base);
+	luajit::open_lib	(lua(),	LUA_LOADLIBNAME,	luaopen_package);
+	luajit::open_lib	(lua(),	LUA_TABLIBNAME,		luaopen_table);
+	luajit::open_lib	(lua(),	LUA_IOLIBNAME,		luaopen_io);
+	luajit::open_lib	(lua(),	LUA_OSLIBNAME,		luaopen_os);
+	luajit::open_lib	(lua(),	LUA_MATHLIBNAME,	luaopen_math);
+	luajit::open_lib	(lua(),	LUA_STRLIBNAME,		luaopen_string);
+
+#ifdef DEBUG
+	luajit::open_lib	(lua(),	LUA_DBLIBNAME,		luaopen_debug);
+#endif // #ifdef DEBUG
+
+	if (!strstr(Core.Params,"-nojit")) {
+		luajit::open_lib(lua(),	LUA_JITLIBNAME,		luaopen_jit);
+#ifndef DEBUG
+		put_function	(lua(), opt_lua_binary, sizeof(opt_lua_binary), "jit.opt");
+		put_function	(lua(), opt_inline_lua_binary, sizeof(opt_lua_binary), "jit.opt_inline");
+		dojitopt		(lua(), "2");
+#endif // #ifndef DEBUG
+	}
+
+	if (strstr(Core.Params,"-_g"))
+		file_header			= file_header_new;
+	else
+		file_header			= file_header_old;
 }
 
-int CScriptStorage::vscript_log(ScriptStorage::ELuaMessageType tLuaMessageType, LPCSTR caFormat, va_list marker)
+int CScriptStorage::vscript_log		(ScriptStorage::ELuaMessageType tLuaMessageType, LPCSTR caFormat, va_list marker)
 {
 #ifndef NO_XRGAME_SCRIPT_ENGINE
-#   ifdef DEBUG
-        if (!psAI_Flags.test(aiLua) && (tLuaMessageType != ScriptStorage::eLuaMessageTypeError))
-            return(0);
-#   endif //-DEBUG
-#endif //!NO_XRGAME_SCRIPT_ENGINE
+//#	ifdef DEBUG
+//	if (!psAI_Flags.test(aiLua) && (tLuaMessageType != ScriptStorage::eLuaMessageTypeError))
+//		return(0);
+//#	endif
+#endif
 
 //#ifndef PRINT_CALL_STACK
     //return		(0);
@@ -336,6 +329,10 @@ int CScriptStorage::vscript_log(ScriptStorage::ELuaMessageType tLuaMessageType, 
         S = "[LUA][HOOK_TAIL_RETURN] ";
         SS = "[TAIL_RETURN] ";
         break;
+		case ScriptStorage::eLuaMessageTypeUser:
+			S = "";
+			SS = "";
+			break;
     }
     default: NODEFAULT;
     }

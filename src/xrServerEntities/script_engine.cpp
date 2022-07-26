@@ -14,17 +14,6 @@
 #include "../build_config_defines.h"
 #include "script_storage.h"
 
-static void* lua_alloc(void* ud, void* ptr, size_t osize, size_t nsize) {
-	(void)ud;
-	(void)osize;
-	if (!nsize)
-	{
-		xr_free(ptr);
-		return	NULL;
-	}
-	else
-		return xr_realloc(ptr, nsize);
-}
 
 #ifdef USE_DEBUGGER
 #	ifndef USE_LUA_STUDIO
@@ -47,7 +36,8 @@ static LogCallback					s_old_log_callback			= 0;
 extern Flags32 psAI_Flags;
 #	endif //-DEBUG
 #endif //!XRSE_FACTORY_EXPORTS
-#include "lua.hpp"
+
+void jit_command(lua_State*, LPCSTR);
 
 #if defined(USE_DEBUGGER) && defined(USE_LUA_STUDIO)
 static void log_callback			(LPCSTR message)
@@ -290,23 +280,29 @@ extern void export_classes(lua_State *L);
 
 void CScriptEngine::init()
 {
-	lua_State* LSVM = luaL_newstate();//luaL_newstate(); //Запускаем LuaJIT. Память себе он выделит сам.
-	R_ASSERT2(LSVM, "! ERROR : Cannot initialize LUA VM!");
-	CScriptStorage::reinit(LSVM);
-#ifdef LUABIND_09
-	luabind::disable_super_deprecation();
-#endif
-	luabind::open(lua());
-#ifdef LUABIND_NO_EXCEPTIONS
-	luabind::set_error_callback(lua_error);
-	luabind::set_cast_failed_callback(lua_cast_failed);
-#endif
-	luabind::set_pcall_callback(lua_pcall_failed); //KRodin: НЕ ЗАКОММЕНТИРОВАТЬ НИ В КОЕМ СЛУЧАЕ!!!
-	lua_atpanic(LSVM, lua_panic);
+#ifdef USE_LUA_STUDIO
+	bool lua_studio_connected = !!m_lua_studio_world;
+	if (lua_studio_connected)
+		m_lua_studio_world->remove		(lua());
+#endif // #ifdef USE_LUA_STUDIO
 
-	//-----------------------------------------------------//
-	export_classes(LSVM); //Тут регистрируются все движковые функции, импортированные в скрипты
-	luaL_openlibs(LSVM); //Инициализация функций LuaJIT
+	CScriptStorage::reinit				();
+
+#ifdef USE_LUA_STUDIO
+	if (m_lua_studio_world || strstr(Core.Params, "-lua_studio")) {
+		if (!lua_studio_connected)
+			try_connect_to_debugger		();
+		else {
+			jit_command					(lua(), "debug=2");
+			jit_command					(lua(), "off");
+			m_lua_studio_world->add		(lua());
+		}
+	}
+#endif // #ifdef USE_LUA_STUDIO
+
+	luabind::open						(lua());
+	setup_callbacks						();
+	export_classes						(lua());
 	setup_auto_load(); //Построение метатаблицы
 
 #ifdef DEBUG
