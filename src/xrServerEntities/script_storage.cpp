@@ -61,7 +61,7 @@ LPCSTR	file_header = 0;
 #ifndef PURE_ALLOC
 //#	ifndef USE_MEMORY_MONITOR
 #		define USE_DL_ALLOCATOR
-#	endif // USE_MEMORY_MONITOR
+//#	endif // USE_MEMORY_MONITOR
 #endif // PURE_ALLOC
 
 static LPVOID __cdecl luabind_allocator(
