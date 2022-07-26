@@ -219,9 +219,9 @@ void CScriptStorage::reinit	()
 	}
 
 
-    luaL_openlibs(lua());
-    if (strstr(Core.Params, "-nojit"))
-        luaJIT_setmode(lua(), 0, LUAJIT_MODE_ENGINE | LUAJIT_MODE_OFF);
+//    luaL_openlibs(lua());
+//    if (strstr(Core.Params, "-nojit"))
+//       luaJIT_setmode(lua(), 0, LUAJIT_MODE_ENGINE | LUAJIT_MODE_OFF);
 	// initialize lua standard library functions 
 	struct luajit {
 		static void open_lib	(lua_State *L, pcstr module_name, lua_CFunction function)
@@ -698,9 +698,7 @@ luabind::object CScriptStorage::name_space(LPCSTR namespace_name)
     }
 }
 
-#include <boost/noncopyable.hpp>
-
-struct raii_guard : private boost::noncopyable
+struct raii_guard
 {
     int m_error_code;
     LPCSTR const& m_error_description;
@@ -727,6 +725,11 @@ struct raii_guard : private boost::noncopyable
                 Msg("! [SCRIPT ERROR]: %s", m_error_description);
         }
     }
+	
+	//non copyable
+	raii_guard(const raii_guard&) = delete;
+	raii_guard& operator=(const raii_guard&) = delete;
+
 }; //-struct raii_guard
 
 bool CScriptStorage::print_output(lua_State *L, LPCSTR caScriptFileName, int iErorCode)
