@@ -734,78 +734,69 @@ struct raii_guard
 
 bool CScriptStorage::print_output(lua_State *L, LPCSTR caScriptFileName, int iErorCode)
 {
-	auto Prefix = "";
-	if (iErorCode) {
-		switch (iErorCode) {
-		case LUA_ERRRUN:
-			Prefix = "SCRIPT RUNTIME ERROR";
-			break;
-		case LUA_ERRMEM:
-			Prefix = "SCRIPT ERROR (memory allocation)";
-			break;
-		case LUA_ERRERR:
-			Prefix = "SCRIPT ERROR (while running the error handler function)";
-			break;
-		case LUA_ERRFILE:
-			Prefix = "SCRIPT ERROR (while running file)";
-			break;
-		case LUA_ERRSYNTAX:
-			Prefix = "SCRIPT SYNTAX ERROR";
-			break;
-		case LUA_YIELD:
-			Prefix = "Thread is yielded";
-			break;
-		default: NODEFAULT;
+	if (iErorCode)
+		print_error		(L,iErorCode);
+
+	if (!lua_isstring(L,-1))
+		return			(false);
+
+	LPCSTR				S = lua_tostring(L,-1);
+	if (!xr_strcmp(S,"cannot resume dead coroutine")) {
+		VERIFY2	("Please do not return any values from main!!!",caScriptFileName);
+#ifdef USE_DEBUGGER
+#	ifndef USE_LUA_STUDIO
+		if(ai().script_engine().debugger() && ai().script_engine().debugger()->Active() ){
+			ai().script_engine().debugger()->Write(S);
+			ai().script_engine().debugger()->ErrorBreak();
 		}
+#	endif // #ifndef USE_LUA_STUDIO
+#endif // #ifdef USE_DEBUGGER
 	}
-
-	auto traceback = get_lua_traceback(L);
-
-	if (!lua_isstring(L, -1)) //НЕ УДАЛЯТЬ! Иначе будут вылeты без лога!
-	{
-		Msg("*********************************************************************************");
-		Msg("[print_output(%s)] %s!\n%s", caScriptFileName, Prefix, traceback);
-		Msg("*********************************************************************************");
-		return false;
+	else {
+		if (!iErorCode)
+			script_log	(ScriptStorage::eLuaMessageTypeInfo,"Output from %s",caScriptFileName);
+		script_log		(iErorCode ? ScriptStorage::eLuaMessageTypeError : ScriptStorage::eLuaMessageTypeMessage,"%s",S);
+#ifdef USE_DEBUGGER
+#	ifndef USE_LUA_STUDIO
+		if (ai().script_engine().debugger() && ai().script_engine().debugger()->Active()) {
+			ai().script_engine().debugger()->Write		(S);
+			ai().script_engine().debugger()->ErrorBreak	();
+		}
+#	endif // #ifndef USE_LUA_STUDIO
+#endif // #ifdef USE_DEBUGGER
 	}
-
-	auto S = lua_tostring(L, -1);
-	Msg("*********************************************************************************");
-	Msg("[print_output(%s)] %s:\n%s\n%s", caScriptFileName, Prefix, S, traceback);
-	Msg("*********************************************************************************");
-	return true;
+	return				(true);
 }
 
 void CScriptStorage::print_error(lua_State *L, int iErrorCode)
 {
-    switch (iErrorCode)
-    {
-    case LUA_ERRRUN: {
-        script_log(ScriptStorage::eLuaMessageTypeError, "SCRIPT RUNTIME ERROR");
-        break;
-    }
-    case LUA_ERRMEM: {
-        script_log(ScriptStorage::eLuaMessageTypeError, "SCRIPT ERROR (memory allocation)");
-        break;
-    }
-    case LUA_ERRERR: {
-        script_log(ScriptStorage::eLuaMessageTypeError, "SCRIPT ERROR (while running the error handler function)");
-        break;
-    }
-    case LUA_ERRFILE: {
-        script_log(ScriptStorage::eLuaMessageTypeError, "SCRIPT ERROR (while running file)");
-        break;
-    }
-    case LUA_ERRSYNTAX: {
-        script_log(ScriptStorage::eLuaMessageTypeError, "SCRIPT SYNTAX ERROR");
-        break;
-    }
-    case LUA_YIELD: {
-        script_log(ScriptStorage::eLuaMessageTypeInfo, "Thread is yielded");
-        break;
-    }
-    default: NODEFAULT;
-    }
+	switch (iErrorCode) {
+		case LUA_ERRRUN : {
+			script_log (ScriptStorage::eLuaMessageTypeError,"SCRIPT RUNTIME ERROR");
+			break;
+		}
+		case LUA_ERRMEM : {
+			script_log (ScriptStorage::eLuaMessageTypeError,"SCRIPT ERROR (memory allocation)");
+			break;
+		}
+		case LUA_ERRERR : {
+			script_log (ScriptStorage::eLuaMessageTypeError,"SCRIPT ERROR (while running the error handler function)");
+			break;
+		}
+		case LUA_ERRFILE : {
+			script_log (ScriptStorage::eLuaMessageTypeError,"SCRIPT ERROR (while running file)");
+			break;
+		}
+		case LUA_ERRSYNTAX : {
+			script_log (ScriptStorage::eLuaMessageTypeError,"SCRIPT SYNTAX ERROR");
+			break;
+		}
+		case LUA_YIELD : {
+			script_log (ScriptStorage::eLuaMessageTypeInfo,"Thread is yielded");
+			break;
+		}
+		default : NODEFAULT;
+	}
 }
 
 #ifdef LUA_DEBUG_PRINT //DEBUG
