@@ -4,13 +4,9 @@
 class UIHint;
 class CScriptXmlInit;
 class CUIWindow;
-#ifdef _WIN64
-struct _24b { DWORD _[6]; };
-extern poolSS< _24b, 128>	ui_allocator;
-#else
-struct _12b { DWORD _[3]; };
+
+struct _12b	{ DWORD _[3]; };
 extern poolSS< _12b, 128>	ui_allocator;
-#endif
 
 
 template <class T>
