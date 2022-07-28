@@ -258,6 +258,9 @@ void CActor::IR_OnKeyboardRelease(int cmd)
 
 	if (g_Alive())	
 	{
+        if (cmd == kUSE) 
+			PickupModeOff();
+
 		if(m_holder)
 		{
 			m_holder->OnKeyboardRelease(cmd);
@@ -411,6 +414,8 @@ bool CActor::use_Holder				(CHolderCustom* holder)
 
 void CActor::ActorUse()
 {
+	PickupModeOn();
+
 	if (m_holder)
 	{
 		CGameObject*	GO			= smart_cast<CGameObject*>(m_holder);

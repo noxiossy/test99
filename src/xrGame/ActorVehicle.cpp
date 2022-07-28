@@ -35,7 +35,7 @@ void CActor::attach_Vehicle(CHolderCustom* vehicle)
 	if (!car)
 		return;
 
-	//PickupModeOff		();
+	PickupModeOff		();
 	m_holder=vehicle;
 
 	IRenderVisual *pVis = Visual();

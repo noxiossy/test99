@@ -66,6 +66,18 @@ bool CActor::feel_touch_on_contact	(CObject *O)
 	return		(false);
 }
 
+
+void CActor::PickupModeOn()
+{
+	m_bPickupMode = true;
+}
+
+void CActor::PickupModeOff()
+{
+	m_bPickupMode = false;
+}
+
+
 ICF static BOOL info_trace_callback(collide::rq_result& result, LPVOID params)
 {
 	BOOL& bOverlaped	= *(BOOL*)params;
@@ -148,9 +160,9 @@ void CActor::PickupModeUpdate()
 BOOL	g_b_COD_PickUpMode = TRUE;
 void	CActor::PickupModeUpdate_COD	()
 {
-	if (Level().CurrentViewEntity() != this || !g_b_COD_PickUpMode) return;
+	if (Level().CurrentViewEntity() != this) return;
 		
-	if (!g_Alive() || eacFirstEye != cam_active) 
+	if (!g_Alive() || eacFirstEye != cam_active || !g_b_COD_PickUpMode) 
 	{
 		CurrentGameUI()->UIMainIngameWnd->SetPickUpItem(nullptr);
 		return;
@@ -225,6 +237,8 @@ void	CActor::PickupModeUpdate_COD	()
 
 		//подбирание объекта
 		Game().SendPickUpEvent(ID(), pNearestItem->object().ID());
+		
+		PickupModeOff();
 	}
 };
 

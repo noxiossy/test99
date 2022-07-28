@@ -1,10 +1,13 @@
 ﻿#ifndef GAME_CL_CTA_CAPTIONS_MANAGER
 #define GAME_CL_CTA_CAPTIONS_MANAGER
 
+#include <boost/noncopyable.hpp>
+
 class game_cl_CaptureTheArtefact;
 class CUIGameCTA;
 
-class	CTAGameClCaptionsManager
+class	CTAGameClCaptionsManager : 
+		private boost::noncopyable
 {
 private:
 			bool							m_press_fire2spect_showed;
@@ -25,10 +28,6 @@ private:
 	void	ConvertTime2String				(string64 & str, u32 time);
 public:
 			CTAGameClCaptionsManager	();
-			//non copyable
-			CTAGameClCaptionsManager(const CTAGameClCaptionsManager&) = delete;
-			CTAGameClCaptionsManager& operator=(const CTAGameClCaptionsManager&) = delete;
-
 			~CTAGameClCaptionsManager	();
 	void	Init						(game_cl_CaptureTheArtefact* parent,
 										CUIGameCTA* game_ui);

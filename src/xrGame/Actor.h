@@ -387,6 +387,10 @@ protected:
     void					PickupInfoDraw		(CObject* object);
     void					PickupModeUpdate_COD ();
 
+public:
+	void					PickupModeOn		();
+	void					PickupModeOff		();
+
     //////////////////////////////////////////////////////////////////////////
     // Motions (передвижения актрера)
     //////////////////////////////////////////////////////////////////////////

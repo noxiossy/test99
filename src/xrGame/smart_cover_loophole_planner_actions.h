@@ -10,6 +10,7 @@
 
 #include "smart_cover_detail.h"
 #include "smart_cover_planner_actions.h"
+#include <boost/noncopyable.hpp>
 #include "xrServer_Space.h"
 
 class CAI_Stalker;
@@ -73,7 +74,9 @@ public:
 	virtual void		finalize						();
 }; // class loophole_action_no_sight
 
-class loophole_lookout final: public loophole_action
+class loophole_lookout :
+	public loophole_action,
+	private debug::make_final<loophole_lookout>
 {
 private:
 	typedef loophole_action							inherited;
@@ -85,7 +88,9 @@ public:
 	virtual void		finalize					();
 };
 
-class loophole_fire final: public loophole_action
+class loophole_fire :
+	public loophole_action,
+	private debug::make_final<loophole_fire>
 {
 private:
 	typedef loophole_action							inherited;
@@ -105,7 +110,9 @@ public:
 	virtual	void		on_no_mark					();
 };
 
-class loophole_reload final: public loophole_action_no_sight
+class loophole_reload :
+	public loophole_action_no_sight,
+	private debug::make_final<loophole_reload>
 {
 private:
 	typedef loophole_action_no_sight				inherited;

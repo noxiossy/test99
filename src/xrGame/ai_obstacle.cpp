@@ -12,7 +12,10 @@
 #include "level_graph.h"
 #include "GameObject.h"
 #include "../Include/xrRender/Kinematics.h"
+#include <boost/crc.hpp>
+
 #include "../xrEngine/bone.h"
+
 #pragma warning(push)
 #pragma warning(disable:4995)
 #include <malloc.h>
@@ -260,7 +263,9 @@ void ai_obstacle::compute_impl		()
 		return;
 	}
 
-	m_crc						=crc32(m_area.data(), m_area.size());
+	boost::crc_32_type			temp;
+	temp.process_block			(&*m_area.begin(),&*m_area.end());
+	m_crc						= temp.checksum();
 }
 
 void ai_obstacle::on_move			()

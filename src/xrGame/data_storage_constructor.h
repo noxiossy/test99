@@ -10,7 +10,6 @@
 
 template <typename T>				class CEmptyClassTemplate	{};
 template <typename T1, typename T2> class CEmptyClassTemplate2	{};
-class CBuilderAllocatorConstructor0 {};
 
 #include "manager_builder_allocator_constructor.h"
 

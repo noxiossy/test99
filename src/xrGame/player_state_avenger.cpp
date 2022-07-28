@@ -22,16 +22,12 @@ void player_state_avenger::reset_game()
 
 void player_state_avenger::OnPlayerKilled(u16 killer_id, u16 target_id, u16 weapon_id, std::pair<KILL_TYPE, SPECIAL_KILL_TYPE> kill_type)
 {
-	struct need_revenge
+	struct need_revenge : boost::noncopyable
 	{
 		need_revenge					(shared_str* buff_store, u32 store_size) :
 			m_my_team_players(buff_store, store_size)
 		{
 		};
-			
-		//non copyable
-		need_revenge(const need_revenge&) = delete;
-		need_revenge& operator=(const need_revenge&) = delete;
 			
 		bool				operator()	(shared_str const & killer,
 										 shared_str const & victim,

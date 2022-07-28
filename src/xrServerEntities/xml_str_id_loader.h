@@ -71,7 +71,7 @@ public:
 
 
 TEMPLATE_SPECIALIZATION
-T_VECTOR* CSXML_IdToIndex::m_pItemDataVector = NULL;
+typename T_VECTOR* CSXML_IdToIndex::m_pItemDataVector = NULL;
 
 TEMPLATE_SPECIALIZATION
 LPCSTR CSXML_IdToIndex::file_str = NULL;
@@ -92,7 +92,7 @@ CSXML_IdToIndex::~CXML_IdToIndex()
 
 
 TEMPLATE_SPECIALIZATION
-const ITEM_DATA* CSXML_IdToIndex::GetById (const shared_str& str_id, bool no_assert)
+const typename ITEM_DATA* CSXML_IdToIndex::GetById (const shared_str& str_id, bool no_assert)
 {
 	T_INIT::InitXmlIdToIndex();
 		
@@ -112,7 +112,7 @@ const ITEM_DATA* CSXML_IdToIndex::GetById (const shared_str& str_id, bool no_ass
 }
 
 TEMPLATE_SPECIALIZATION
-const ITEM_DATA* CSXML_IdToIndex::GetByIndex(int index, bool no_assert)
+const typename ITEM_DATA* CSXML_IdToIndex::GetByIndex(int index, bool no_assert)
 {
 	if((size_t)index>=m_pItemDataVector->size())
 	{
@@ -132,7 +132,7 @@ void CSXML_IdToIndex::DeleteIdToIndexData	()
 }
 
 TEMPLATE_SPECIALIZATION
-void	CSXML_IdToIndex::InitInternal ()
+typename void	CSXML_IdToIndex::InitInternal ()
 {
 	VERIFY(!m_pItemDataVector);
 	T_INIT::InitXmlIdToIndex();

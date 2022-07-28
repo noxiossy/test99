@@ -8,11 +8,14 @@
 #ifndef SMART_COVER_STORAGE_H_INCLUDED
 #define SMART_COVER_STORAGE_H_INCLUDED
 
+#include <boost/noncopyable.hpp>
 #include "smart_cover.h"
 
 namespace smart_cover {
 
-class storage final
+class storage : 
+	private debug::make_final<storage>, 
+	private boost::noncopyable 
 {
 public:
 	typedef xr_vector<smart_cover::description*>		Descriptions;
@@ -22,11 +25,6 @@ private:
 	Descriptions	m_descriptions;
 
 public:
-							storage() = default;
-							//non copyable
-							storage(const storage&) = delete;
-							storage& operator=(const storage&) = delete;
-
 							~storage		();
 			DescriptionPtr	description		(shared_str const &table_id);
 			void			collect_garbage	();

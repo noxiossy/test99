@@ -17,7 +17,7 @@ namespace upgrade
 {
 
 
-class Property
+class Property : private boost::noncopyable
 {
 public:
 	typedef xr_vector<shared_str>		FunctorParams_type;
@@ -27,10 +27,6 @@ private:
 
 public:
 					Property();
-					//non copyable
-					Property(const Property&) = delete;
-					Property& operator=(const Property&) = delete;
-
 	virtual			~Property();
 
 			void	construct( const shared_str& property_id, Manager& manager_r );

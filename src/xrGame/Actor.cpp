@@ -913,9 +913,9 @@ float CActor::currentFOV()
 
 void CActor::UpdateCL()
 {
-    if (g_Alive() && Level().CurrentViewEntity() == this)
+    /*if (g_Alive() && Level().CurrentViewEntity() == this)
     {
-        if (CurrentGameUI() && NULL == CurrentGameUI()->TopInputReceiver())
+		if(CurrentGameUI() && !CurrentGameUI()->TopInputReceiver() && !m_holder)
         {
             int dik = get_action_dik(kUSE, 0);
             if (dik && pInput->iGetAsyncKeyState(dik))
@@ -924,8 +924,12 @@ void CActor::UpdateCL()
             dik = get_action_dik(kUSE, 1);
             if (dik && pInput->iGetAsyncKeyState(dik))
                 m_bPickupMode = true;
+		}
+        else
+        {
+            m_bPickupMode = false;
         }
-    }
+    }*/
 
     UpdateInventoryOwner(Device.dwTimeDelta);
 
@@ -1042,8 +1046,6 @@ void CActor::UpdateCL()
 
     if (IsFocused())
         g_player_hud->update(trans);
-
-    m_bPickupMode = false;
 }
 
 float	NET_Jump = 0;

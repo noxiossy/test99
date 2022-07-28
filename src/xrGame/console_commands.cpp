@@ -60,9 +60,9 @@ string_path		g_last_saved_game;
 extern float air_resistance_epsilon;
 #endif // #ifdef DEBUG
 
-extern void show_smart_cast_stats();
-extern void clear_smart_cast_stats();
-extern void release_smart_cast_stats();
+//extern void show_smart_cast_stats		();
+//extern void clear_smart_cast_stats		();
+//extern void release_smart_cast_stats	();
 
 extern	u64		g_qwStartGameTime;
 extern	u64		g_qwEStartGameTime;
@@ -138,12 +138,12 @@ enum E_COMMON_FLAGS
 
 #ifndef PURE_ALLOC
 //#	ifndef USE_MEMORY_MONITOR
-//#		define SEVERAL_ALLOCATORS
+#		define SEVERAL_ALLOCATORS
 //#	endif // USE_MEMORY_MONITOR
 #endif // PURE_ALLOC
 
 #ifdef SEVERAL_ALLOCATORS
-//extern		u32 game_lua_memory_usage();
+extern		u32 game_lua_memory_usage();
 #endif // SEVERAL_ALLOCATORS
 
 typedef void(*full_memory_stats_callback_type) ();
@@ -155,7 +155,7 @@ static void full_memory_stats()
 	size_t	_process_heap = ::Memory.mem_usage();
 #ifdef SEVERAL_ALLOCATORS
 //	u32		_game_lua = game_lua_memory_usage();
-//	u32		_render = ::Render->memory_usage();
+	u32		_render = ::Render->memory_usage();
 #endif // SEVERAL_ALLOCATORS
 	int		_eco_strings = (int)g_pStringContainer->stat_economy();
 	int		_eco_smem = (int)g_pSharedMemoryContainer->stat_economy();
@@ -1206,7 +1206,7 @@ struct CCC_LuaHelp : public IConsole_Command
 	}
 };
 
-struct CCC_ShowSmartCastStats : public IConsole_Command
+/*struct CCC_ShowSmartCastStats : public IConsole_Command
 {
 	CCC_ShowSmartCastStats(LPCSTR N) : IConsole_Command(N) { bEmptyArgsHandled = true; };
 
@@ -1224,7 +1224,7 @@ struct CCC_ClearSmartCastStats : public IConsole_Command
 	{
 		clear_smart_cast_stats();
 	}
-};
+};*/
 /*
 struct CCC_NoClip : public CCC_Mask
 {
@@ -2051,8 +2051,8 @@ void CCC_RegisterCommands()
 
 #ifdef DEBUG
 	CMD1(CCC_LuaHelp, "lua_help");
-	CMD1(CCC_ShowSmartCastStats, "show_smart_cast_stats");
-	CMD1(CCC_ClearSmartCastStats, "clear_smart_cast_stats");
+	//CMD1(CCC_ShowSmartCastStats, "show_smart_cast_stats");
+	//CMD1(CCC_ClearSmartCastStats, "clear_smart_cast_stats");
 
 	CMD3(CCC_Mask, "dbg_draw_actor_alive", &dbg_net_Draw_Flags, dbg_draw_actor_alive);
 	CMD3(CCC_Mask, "dbg_draw_actor_dead", &dbg_net_Draw_Flags, dbg_draw_actor_dead);
